@@ -1,0 +1,11 @@
+{
+  "titre": "Assistant de cours — Technologie Cycle 4",
+  "niveau": "5e, 4e, 3e",
+  "fiches": [
+    {
+      "id": "SFC1i",
+      "nom": "Fonctions des constituants : capteurs, microcontrôleur, IHM",
+      "fichier": "fiches/SFC1i-capteurs-microcontroleur-IHM.pdf"
+    }
+  ]
+}
