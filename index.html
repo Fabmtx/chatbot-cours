@@ -1,0 +1,3786 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assistant de cours — Technologie</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F5F2EB;--surface:#FDFCF9;--surface2:#F0EDE4;--border:#DDD9CE;
+    --accent:#2D6A4F;--accent2:#40916C;--accent-light:#D8F3DC;
+    --text:#1A1A18;--text2:#5A5A52;--text3:#9A9A8E;
+    --user-bg:#2D6A4F;--bot-bg:#FDFCF9;--radius:16px;--radius-sm:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .hdr-left{display:flex;align-items:center;gap:12px;}
+  .logo-dot{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .logo-dot svg{width:16px;height:16px;fill:#fff;}
+  .hdr-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+  .hdr-sub{font-size:12px;color:var(--text3);margin-top:1px;}
+  .badge{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--accent2);background:var(--accent-light);color:var(--accent);white-space:nowrap;}
+  #chat-area{flex:1;flex-direction:column;overflow:hidden;display:flex;}
+  #messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;scroll-behavior:smooth;}
+  .msg{display:flex;gap:10px;max-width:82%;animation:fadeUp 0.2s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg.user{align-self:flex-end;flex-direction:row-reverse;}
+  .msg.bot{align-self:flex-start;}
+  .bubble{padding:11px 15px;border-radius:var(--radius);font-size:14px;line-height:1.65;max-width:100%;}
+  .user .bubble{background:var(--user-bg);color:#fff;border-bottom-right-radius:4px;}
+  .bot .bubble{background:var(--bot-bg);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px;}
+  .bot .bubble.refused{border-color:#F0D9AA;background:#FFFBF0;color:#7A5C00;}
+  .avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+  .bot .avatar{background:var(--accent);}
+  .bot .avatar svg{width:14px;height:14px;fill:#fff;}
+  .user .avatar{background:var(--surface2);border:1px solid var(--border);font-size:13px;}
+  .typing-dot{display:inline-flex;gap:4px;padding:4px 2px;}
+  .typing-dot span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce 1.2s infinite;}
+  .typing-dot span:nth-child(2){animation-delay:.2s;}
+  .typing-dot span:nth-child(3){animation-delay:.4s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+  .welcome{text-align:center;padding:2rem 1rem;color:var(--text2);font-size:14px;line-height:1.7;}
+  .welcome strong{display:block;font-family:'Syne',sans-serif;font-size:16px;color:var(--text);margin-bottom:6px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px;}
+  .chip{padding:6px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;}
+  .chip:hover{border-color:var(--accent2);color:var(--accent);background:var(--accent-light);}
+  #input-bar{padding:1rem 1.5rem;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+  #user-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;background:var(--bg);color:var(--text);resize:none;outline:none;line-height:1.5;max-height:120px;overflow-y:auto;transition:border-color .15s;margin-bottom:0;}
+  #user-input:focus{border-color:var(--accent2);}
+  #send-btn{width:40px;height:40px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0;}
+  #send-btn:hover{background:var(--accent2);}
+  #send-btn:disabled{opacity:.4;cursor:not-allowed;}
+  #send-btn svg{width:16px;height:16px;fill:#fff;}
+  .disclaimer{text-align:center;font-size:11px;color:var(--text3);padding:0 1rem .5rem;}
+  #messages::-webkit-scrollbar{width:4px;}
+  #messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <div class="logo-dot">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">Assistant de cours — Technologie</div>
+      <div class="hdr-sub">5e, 4e, 3e — Cycle 4</div>
+    </div>
+  </div>
+  <div>
+    <span class="badge">70 fiches chargées</span>
+  </div>
+</header>
+
+<div id="chat-area">
+  <div id="messages">
+    <div class="welcome">
+      <strong>Prêt à t'aider !</strong>
+      Bonjour ! 👋 Je suis ton assistant pour réviser tes cours de technologie.<br>
+      Je réponds uniquement à partir de ta fiche de cours.
+      <div style="margin-top:8px;">
+        <span style="font-size:12px;background:var(--accent-light);color:var(--accent);border:1px solid var(--accent2);border-radius:12px;padding:2px 10px;">📄 SFC1i + 70 fiches Bordeaux 2024</span>
+      </div>
+      <div class="chips">
+        <span class="chip" onclick="fillInput('Peux-tu m\'expliquer la notion principale de la fiche ?')">📖 Expliquer une notion</span>
+        <span class="chip" onclick="fillInput('Quels sont les points importants à retenir ?')">✅ Points clés</span>
+        <span class="chip" onclick="fillInput('Pose-moi une question pour que je révise.')">🎯 Me faire réviser</span>
+      </div>
+    </div>
+  </div>
+  <div class="disclaimer">Les réponses sont basées uniquement sur la fiche de cours chargée.</div>
+  <div id="input-bar">
+    <textarea id="user-input" placeholder="Pose ta question sur le cours…" rows="1"></textarea>
+    <button id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22 11 13 2 9l20-7z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const API_KEY = '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';
+
+const CONTENU_FICHES = `=== FICHE SFC1i — Fonctions des constituants : capteurs, microcontrôleur, IHM ===
+Matière : Technologie — Cycle 4 (5e, 4e, 3e)
+Référence : BO n°9 du 29 février 2024
+
+--- INTRODUCTION ---
+Pour utiliser un objet ou système technique, les composants de l'interface entre l'humain et la machine (IHM) (chaîne d'information) sont importants pour son fonctionnement et l'interaction avec son environnement.
+
+--- LES CAPTEURS ---
+Les capteurs servent à acquérir des informations sur l'environnement de l'objet technique.
+Les capteurs transforment une grandeur physique (température, présence, etc.) en un signal électrique. Ce signal est ensuite transmis au microcontrôleur pour traitement.
+
+Types de capteurs :
+- Capteurs de température : mesurent la température d'un milieu.
+- Capteurs de présence : détectent la présence d'un objet ou d'une personne.
+- Capteurs de distance : mesurent la distance entre l'objet et un obstacle.
+- Autres types de capteurs : lumière, son, pression, etc.
+
+--- LE MICROCONTRÔLEUR ---
+Le microcontrôleur sert à traiter les informations et commander les actionneurs.
+Le microcontrôleur est un circuit électronique programmable qui reçoit les signaux des capteurs, les traite en fonction de sa programmation et envoie des signaux de commande aux actionneurs.
+
+--- LES COMPOSANTS D'UNE IHM (Interface Homme-Machine) ---
+Les composants d'une IHM permettent à l'utilisateur d'interagir avec l'objet technique.
+Les composants IHM permettent à l'utilisateur d'envoyer des informations au microcontrôleur (par exemple en appuyant sur un bouton) ou de recevoir des informations du microcontrôleur (par exemple en lisant un message sur un afficheur).
+
+Types de composants IHM :
+- Boutons : permettent de saisir des informations ou de commander des actions.
+- Afficheurs : permettent de visualiser des informations.
+- Écrans tactiles : permettent de saisir des informations et de visualiser des informations de manière interactive.
+- Autres types de composants IHM : haut-parleurs, LEDs, etc.
+
+--- FONCTIONNEMENT D'ENSEMBLE ---
+Les capteurs, le microcontrôleur et les composants IHM travaillent ensemble pour permettre à l'objet technique de fonctionner.
+Les capteurs acquièrent des informations, le microcontrôleur les traite et les composants IHM les affichent ou les transmettent à l'utilisateur.
+L'utilisateur peut ensuite interagir avec l'objet technique via les composants IHM, ce qui entraîne de nouvelles acquisitions de données par les capteurs et un nouveau traitement par le microcontrôleur.
+
+=== FICHES DE CONNAISSANCES — Bordeaux — Nouveaux Programmes 2024 (Cycle 4) ===
+
+CRÉATION, CONCEPTION, RÉALISATION, INNOVATIONS : des objets
+ à concevoir et à réaliser
+
+ La gestion de projet technique Cycle 4
+
+ Le diagramme de planification des tâches : notion de tâches, durée et contraintes entre
+  Connaissance
+ tâches
+
+Pour la réussite d’un projet et le respect des délais de fin de réalisation, il est
+nécessaire de s’organiser et de planifier dans le temps toutes les tâches à faire,
+selon un calendrier précis, appelé planning. On associe, à chaque tâche, des
+ressources (membres du groupe de projet).
+
+Les tâches représentent les étapes du travail à accomplir pour atteindre l’objectif du projet.
+
+Le diagramme de Gantt est une représentation
+graphique d’un planning qui permet de visualiser
+facilement les différentes tâches d’un projet et
+la gestion des personnes ressources.
+
+Le diagramme PERT, complémentaire à celui de
+Gantt, permet de visualiser d’une autre façon les
+différentes tâches à réaliser et met en évidence
+le chemin critique qui détermine la durée
+minimale du projet.
+
+La lecture d’un chemin critique est déterminée sur un diagramme PERT. Il s’agit de la durée
+minimale du projet. Chaque durée de tâche sera additionnée, en tenant compte des antériorités,
+et tout retard sur une tâche peut impacter l’intégralité du temps du projet.
+
+L’antériorité d’une tâche comporte ce qui va la précéder, ce qui doit être fait avant qu’elle puisse
+être déclenchée.
+
+Le chemin critique = 2+2+1+4+4+2+1=16 semaines / Les antériorités de la tâche H, sont les tâches G et E.
+Afin d’organiser la réalisation d’un projet, on crée un planning qui permet de lister
+toutes les tâches d’un projet à accomplir dans le temps selon un calendrier précis
+et de les associer à des personnes (ressources) pour les réaliser. Deux
+représentations graphiques : diagrammes de Gantt et PERT permettent de
+visualiser la planification d’un projet.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 CCRI1a
+
+
+=== NOUVELLE FICHE ===
+
+ CRÉATION, CONCEPTION, RÉALISATION, INNOVATIONS : des objets
+ à concevoir et à réaliser
+
+ La gestion de projet technique Cycle 4
+
+  Connaissance Les étapes d’un projet, revues de projet
+
+Lorsqu’on souhaite réaliser un projet, il est important de suivre des étapes précises
+pour en garantir la réussite. C’est là qu’interviennent les étapes d’un projet et les
+revues de projet.
+
+ ● Étapes d’un projet : ce sont les différentes tâches ou actions à mettre en œuvre pour arriver à
+ réaliser le projet souhaité.
+
+ ● Revues de projet : ce sont des moments de pause pour faire le point, en équipe, sur l’avancement
+ du projet. Ces moments permettent d’identifier les problèmes et de prendre des décisions, assurant
+ que l’on reste sur la bonne voie.
+
+Pour mener à bien un projet, il est important de savoir :
+ ● définir un objectif clair et précis,
+ ● décomposer le projet en étape,
+ ● planifier les tâches et les délais,
+ ● suivre l’avancement du projet et identifier les problèmes,
+ ● communiquer avec les participants du projet,
+ ● prendre des décisions et apporter des corrections.
+
+
+Pour garantir la réussite d’un projet, deux éléments sont importants :
+ ● les étapes d'un projet qui permettent de lister toutes les tâches et actions à mettre en
+ oeuvre pour réaliser le projet
+ ● les revues de projet qui permettent de faire le point sur l’avancement pour poursuivre
+ dans la bonne voie le projet.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 CCRI1b
+
+
+=== NOUVELLE FICHE ===
+
+ CRÉATION, CONCEPTION, RÉALISATION, INNOVATIONS : des objets
+ à concevoir et à réaliser
+
+ La gestion de projet technique Cycle 4
+
+  Connaissance L’écoconception
+
+Lorsque l’on conçoit un produit, c’est à dire un objet (vêtements, jouets, appareils
+électroniques…), un service (transport d’un colis d’un endroit à un autre, voyage,
+l’entretien d’un jardin…) ou même un bâtiment (collège, stade, habitation…), il est
+important de penser à son impact sur l'environnement.
+
+L'écoconception est une démarche qui permet de réduire cet impact par rapport à la conception
+traditionnelle. Elle tient compte de l'environnement pour toutes les étapes du cycle de vie.
+
+L'écoconception permet 4 améliorations :
+ ● diminuer la quantité de ressources naturelles utilisées (eau, énergies, matières premières...).
+ ● réduire la pollution et les déchets générés par le produit.
+ ● augmenter la durabilité du produit et sa durée de vie.
+ ● faciliter le recyclage et la réutilisation des matériaux.
+
+L'écoconception impose les actions suivantes :
+
+ ● analyser les impacts environnementaux du produit à chaque étape de son cycle de vie.
+ rechercher des solutions pour réduire ces impacts.
+ ● choisir des matériaux et des techniques de fabrication durables.
+ ● communiquer sur les aspects environnementaux du produit.
+
+
+L'écoconception est une démarche essentielle pour contribuer à la protection de
+l'environnement et au développement durable. Elle permet de concevoir des
+objets, des services plus respectueux de l'environnement et plus économes en
+ressources.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 CCRI1c
+
+
+=== NOUVELLE FICHE ===
+
+ CRÉATION, CONCEPTION, RÉALISATION, INNOVATIONS : des objets
+ à concevoir et à réaliser
+
+ La modélisation et la fabrication Cycle 4
+
+  Connaissance Les instruments de mesure
+
+Lors de la conception et fabrication des objets, on effectue des mesures pour
+s’assurer qu’ils respectent l’usage pour lequel ils sont prévus. Pour cela on
+utilise des instruments de mesure afin d'obtenir des résultats précis et fiables.
+
+Les instruments de mesure sont des outils qui permettent de quantifier différentes grandeurs
+physiques. Parmi les instruments de mesure les plus courants, on peut citer :
+
+ Instruments de mesures Grandeur physique mesurée
+
+
+ Réglet Longueur (en cm)
+
+
+ Longueur (en mm)
+ Pied à coulisse
+
+
+ Balance Masse (en g)
+
+
+ Thermomètre Température (en °C)
+
+
+ Luxmètre Source lumineuse (en lux)
+
+
+ Multimètre Grandeurs électriques (en V,
+ A, Ω)
+
+
+ Sonomètre Son (en dB)
+
+
+ Pour utiliser correctement les instruments de mesure, il faut :
+ ● Choisir l'instrument de mesure adapté à la grandeur physique à mesurer.
+ ● Positionner correctement l'instrument sur l'objet à mesurer.
+ ● Lire et interpréter les valeurs affichées sur l'instrument.
+ ● Estimer la précision de la mesure en fonction des graduations de l'instrument.
+
+
+Les instruments de mesure sont des outils indispensables pour quantifier les
+grandeurs physiques lors de la conception et de la réalisation d'objets. La qualité de
+la mesure dépend de l’instrument utilisé et de la précision souhaitée, il faut donc
+savoir les choisir, les utiliser et en interpréter les résultats.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 CCRI1d
+
+
+=== NOUVELLE FICHE ===
+
+ CRÉATION, CONCEPTION, RÉALISATION, INNOVATIONS : des objets
+ à concevoir et à réaliser
+
+ La programmation des OST Cycle 4
+
+  Connaissance La modularité : sous-programme, fonction
+
+Lors de la création d’un programme, on doit essayer d’alléger au mieux en utilisant
+la modularité qui consiste à faire appel à des sous-programmes ou à des fonctions.
+Le programme doit être simple et lisible.
+
+L’organisation d'un programme est primordiale, surtout s’il doit être modifié ou corrigé par la
+suite pour s'adapter à une nouvelle problématique. Cela permettra de faciliter sa maintenance
+ou sa mise à niveau. Savoir structurer un programme grâce à des sous programmes ou des
+fonctions, permet de rendre plus lisible son architecture.
+Pour créer un sous-programme ou une fonction, il faut :
+
+Lors de l’écriture d’un programme de taille importante avec des répétitions
+d'instructions, il est indispensable de le découper en plusieurs sous-programmes
+ou fonctions. La modularité permet d’alléger le programme, de le rendre plus
+lisible et modifiable facilement par une autre personne si besoin.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 CCRI3e
+
+
+=== NOUVELLE FICHE ===
+
+ CRÉATION, CONCEPTION, RÉALISATION, INNOVATIONS : des objets
+ à concevoir et à réaliser
+
+ La programmation des OST Cycle 4
+
+ Connaissance La structuration d’un programme (organisation, modularité, commentaires)
+
+Pour programmer un Objet ou un Système Technique, il faut structurer le
+programme pour faciliter sa création et s’assurer qu’il corresponde au besoin et
+aux actions attendues.
+
+Voici les différents éléments que l’on doit voir apparaître dans un programme structuré :
+
+ Exemple de programme.
+
+La modularité consiste à décomposer le programme principal en parties plus petites et plus
+simples à lire. Cela rend le programme plus facile à comprendre, à tester et à modifier.
+
+Pour structurer un programme, on doit :
+
+ 1. Décrire clairement le problème que l’on veut résoudre en identifiant et en décomposant les
+ différentes actions que le système doit réaliser.
+
+ 2. Traduire le problème en langage naturel, c’est ce que l’on appelle l’algorithme.
+
+ 3. Réaliser le programme à partir de cet algorithme en utilisant un logiciel de
+ programmation par blocs.
+
+ 4. Ajouter des commentaires si nécessaire pour décrire les actions des différentes parties
+ du programme.
+
+Structurer un programme, consiste à identifier le problème puis le traduire en
+algorithme pour ensuite le programmer par blocs sur un logiciel et si nécessaire
+ajouter des commentaires pour le rendre plus lisible.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 CCRI3f
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’évolution des OST Cycle 4
+
+ Les éléments qui participent à l’évolution des besoins (invention, innovation,
+  Connaissance
+ développement durable)
+
+Pour répondre à ses besoins, l’Homme crée et fait évoluer des objets et systèmes
+techniques (OST). Lorsqu'on parle de l'évolution de ces besoins, on aborde
+généralement trois éléments importants : l'invention, l'innovation et le
+développement durable.
+
+ ● L’invention est une idée nouvelle, une découverte
+ (scientifique ou technique) qui permet de créer un
+ nouvel objet. C'est la création d'une solution
+ technique nouvelle qui n'existait pas auparavant.
+ Par exemple, l'invention du téléphone par Alexander Graham Bell en 1876.
+
+
+ ● L’innovation est la recherche constante de
+ l’amélioration de l’existant. L’innovation réussie
+ est commercialisée et adoptée par les
+ utilisateurs.
+ Par exemple, le développement des smartphones à
+ partir de l'invention du téléphone portable.
+
+
+ ● Le développement durable est l’idée que
+ l’Homme répond à ses besoins sans
+ compromettre ceux des générations
+ futures. Cela signifie que les objets techniques
+ doivent être conçus et utilisés de manière à
+ respecter l'environnement et l’équité sociale
+ et économique.
+
+
+L'évolution des besoins humains est à l'origine de l'évolution des objets et
+systèmes techniques.
+L'invention est une idée nouvelle (scientifique ou technique) qui permet de créer un
+nouvel objet.
+L'innovation est la recherche constante de l’amélioration de l’existant. Le
+développement durable permet de répondre aux besoins du présent sans
+compromettre ceux du futur.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1a
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’évolution des OST Cycle 4
+
+  Connaissance La fonction technique, le principe technique
+
+Les objets et systèmes techniques (OST) que nous utilisons au quotidien répondent
+à des besoins précis. Pour comprendre leur fonctionnement, il est important de
+connaître leurs fonctions techniques et les principes techniques associés.
+
+ ● La fonction technique est une action qui réalise tout ou partie de
+ la fonction d’usage de l’OST. Elle s’exprime toujours par un verbe à
+ l’infinitif suivi par un complément. Pour chaque fonction technique, on
+ trouve des solutions techniques.
+ On répond à la question : "Comment assurer la fonction d’usage
+ ?".
+ Exemple : Une des fonctions techniques d'une lampe de poche est de produire de la
+ lumière.
+
+
+ ● Le principe technique explique de quelle manière fonctionne un
+ OST. On se demande quel phénomène scientifique ou quelle
+ technique est utilisé.
+ Exemple : La lampe transforme l’énergie électrique en énergie lumineuse pour produire de
+ la lumière.
+
+ Fonction Fonctions Principe technique
+ Solutions techniques (ST)
+ d’usage techniques (FT) (PT)
+
+ Le vélo sert à se FT 1 : Freiner le vélo ST 1 : PT 1 : Frottement du
+ déplacer grâce à FT 2 : Déplacer le vélo freins à patin sur la roue pour
+ l’énergie FT 3 : Diriger le vélo patins, freiner le vélo.
+ musculaire câble,
+ gaine...
+
+ PT 2 : Transformation de
+ l’énergie musculaire en
+ énergie mécanique pour
+ ST 2 :
+ déplacer le vélo.
+ plateau,
+ chaîne,
+
+ pignons...
+
+
+Pour identifier les fonctions techniques et principes techniques, on observe l’OST en
+fonctionnement et on se pose plusieurs questions : quelles sont les actions internes à l’objet,
+quels sont les composants, quels phénomènes scientifiques ou techniques sont utilisés ?
+
+Pour assurer la fonction d’usage d’un objet, il existe différentes fonctions
+techniques qui réalisent chacune une action. A chaque fonction technique est
+associée une ou plusieurs pièces qui sont appelées les solutions techniques. Il peut
+exister différentes solutions techniques pour une même fonction technique. Les
+principes techniques expliquent comment les fonctions techniques sont
+accomplies, par quel phénomène physique ou quelle technique.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1b
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’évolution des OST Cycle 4
+
+  Connaissance La famille et la lignée d’OST
+
+Les objets et systèmes techniques ne sont pas apparus soudainement, mais ils sont
+le résultat d'évolutions. Pour comprendre ces évolutions, il est important de
+s'intéresser à leur famille et à leur lignée.
+
+ ● Une famille regroupe tous les objets et
+ systèmes techniques qui répondent à un
+ même besoin avec la même fonction
+ d'usage. La fonction d’usage répond à la
+ question « A quoi sert l’objet ? »
+ Exemple : la famille des moyens de transport
+ Fonction d’usage (à quoi ça sert?) : transporter des
+ personnes et des marchandises d'un point à un autre.
+
+ ● Une lignée montre dans un ordre chronologique, du plus ancien au plus récent,
+ les objets d’une même famille qui fonctionnent avec le même principe
+ technique.
+ Le principe technique explique de quelle manière fonctionne un OST ? Quel
+ phénomène scientifique ou technique ?
+ Chaque objet de la lignée apporte des améliorations par rapport à ses
+ prédécesseurs, en termes de performance, de fonctionnalités, de coût, etc.
+ Exemple : La lignée des téléphones portables comprend les modèles à clapet, les smartphones à
+ écran tactile, et les smartphones pliables.
+
+Les objets et systèmes techniques évoluent sans cesse pour répondre à nos
+besoins. Ils font partie de familles d’objets qui représentent les OST qui répondent
+au même besoin avec la même fonction d’usage (à quoi ça sert ?). Dans les
+familles, les OST sont regroupés en lignées qui montrent dans un ordre
+chronologique, du plus ancien au plus récent, les objets d’une même famille qui
+fonctionnent sur le même principe technique.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1c
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’évolution des OST Cycle 4
+
+  Connaissance Les contraintes sociétales
+
+Lorsqu’on utilise un objet ou un système technique, il est important de comprendre
+que sa conception et son évolution ne dépendent pas uniquement de la
+technologie. Des facteurs sociétaux, comme les lois, les valeurs et les attentes de
+la société, influencent également son développement.
+
+Les contraintes sociétales sont des limites
+imposées aux technologies par la société. Elles
+peuvent prendre différentes formes :
+
+ ● Lois et réglementations : elles définissent
+ ce qui est autorisé ou non en matière de
+ technologie.
+ Par exemple, la loi impose des limites à la puissance
+ des moteurs des voitures pour réduire la pollution.
+
+ ● Normes et standards : ils définissent les
+ caractéristiques techniques que doivent
+ respecter les produits.
+ Par exemple, les normes de sécurité électrique
+ garantissent la sécurité des utilisateurs.
+
+ ● Valeurs et attentes de la société : elles influencent les choix technologiques
+ des entreprises et des individus pour respecter le développement durable.
+ Par exemple, l'importance croissante du développement durable incite les entreprises à
+ développer des technologies plus
+ économes en énergie.
+
+
+Les contraintes sociétales jouent un
+rôle important dans l'évolution des
+objets et des systèmes techniques.
+Elles permettent de garantir la sécurité
+des utilisateurs, de protéger
+l'environnement et de répondre aux
+attentes de la société. Il est donc
+important de comprendre ces contraintes
+pour mieux utiliser les technologies et
+pour participer à leur développement
+responsable.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1d
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’évolution des OST Cycle 4
+
+  Connaissance Les grands types d’apprentissage des intelligences artificielles et leurs usages possibles
+
+
+Lorsque l’on utilise un moteur de recherche pour trouver des informations, une
+application de traduction, un assistant vocal depuis un smartphone ou une
+enceinte connectée, on interagit avec un système d'intelligence artificielle (IA).
+
+L'intelligence artificielle (IA) est l’ensemble des techniques visant à réaliser des
+machines capables de simuler l’intelligence artificielle.
+
+ Pensée humaine Calculs (modèle d’IA)
+
+L’IA n’est pas une intelligence en soi mais un enchainement de calculs.
+
+C’est une technologie en plein développement qui a commencé à révolutionner de
+nombreux domaines de notre vie quotidienne :
+
+ ● La santé : l'IA est utilisée pour diagnostiquer des maladies.
+ ● Les transports : l'IA est utilisée pour développer des voitures
+ autonomes.
+ ● Le commerce : l'IA est utilisée pour recommander des produits,
+ personnaliser les offres.
+ ● La création numérique : l'IA est utilisée pour créer des textes,
+ des images, des séquences vidéos ou reproduire des voix.
+ ● Le divertissement : l'IA est utilisée pour créer des films, des jeux vidéo, et de la musique.
+
+On distingue 4 méthodes (types) d’apprentissages automatique :
+
+ Le Machine Learning (apprentissage
+ automatique) est un domaine de
+ l'intelligence artificielle qui permet aux
+ machines d'apprendre et de s'améliorer
+ sans programmation explicite. Il se divise en
+ quatre branches principales :
+ L'apprentissage par renforcement,
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1e
+
+
+=== NOUVELLE FICHE ===
+
+supervisé, non supervisé et auto supervisé.
+
+Apprentissage par renforcement :
+ L'IA
+apprend par essais et erreurs en recevant des
+récompenses ou des pénalités en fonction de ses
+actions.
+
+Par exemple, un robot peut apprendre à jouer aux échecs
+en étant récompensé lorsqu'il gagne et pénalisé lorsqu'il
+perd.
+
+Apprentissage supervisé : L’IA apprend
+à partir d’images étiquetées (visages, objets)
+et détermine des paramètres de formule en
+phase d'entraînement. Elle applique ensuite
+la formule paramétrée sur des données
+d’entrées inconnues.
+
+Par exemple, l'IA est entraînée sur un grand
+nombre de photos de déchets étiquetées avec leurs
+noms pour apprendre à reconnaître d’autres
+déchets par association.
+
+Apprentissage non supervisé et auto
+supervisé : L’IA utilise un grand volume de
+données non étiquetées qu’elle va utiliser pour
+effectuer de la prédiction.
+
+Par exemple, lors de l’écriture de SMS, l’IA
+exploite les SMS écrits précédemment, les
+découpe en textes et blocs de mots qui vont
+servir à prédire les mots en fonction des mots
+déjà écrits.
+
+Ce principe d’apprentissage non
+supervisé est utilisé par les IA génératives de textes et d’images comme Chat GPT,
+Gemini AI, Mistral AI, … avec un immense volume de données.
+
+L'intelligence artificielle (IA) est une technologie en plein essor qui permet aux
+machines d'effectuer des tâches intelligentes comme la recherche d'informations,
+la traduction, ou la reconnaissance vocale. Elle fonctionne grâce à des algorithmes
+complexes qui apprennent et s'adaptent à partir de données.
+L'IA est déjà présente dans de nombreux domaines de notre vie quotidienne, comme
+la santé, les transports, le commerce, la création numérique et le divertissement.
+On distingue quatre types d'apprentissage automatique : par renforcement,
+supervisé, non supervisé et auto-supervisé.
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1e
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’évolution des OST Cycle 4
+
+ Les incidences sociétales, notamment l’étude du biais et de l’effet de l’usage d’une
+  Connaissance
+ intelligence artificielle (IA)
+
+
+Lorsqu’on interagit avec un système d'intelligence artificielle (IA), il est important de
+comprendre les impacts positifs et négatifs de cette technologie puissante car elle
+transforme notre société.
+
+L’IA a des effets positifs sur la société :
+
+ ● Amélioration de la santé : diagnostic médical plus précis.
+ ● Facilitation de l'éducation : apprentissage personnalisé,
+ tutoriels interactifs, adaptation aux besoins de chaque élève.
+ ● Renforcement de la sécurité : prévention des accidents
+ (voitures autonomes).
+ ● Amélioration de la productivité des entreprises :
+ automatisation des tâches répétitives, gain de temps et
+ d'argent.
+ ● Stimulation de l'innovation : développement de nouveaux
+ produits et services, création de nouvelles industries.
+ ● Créativité assistée par l'IA générative : Les IA dégénératives telles que ChatGPT ou Gémini
+ peuvent faciliter la créativité au travail ou à l'école. Elles peuvent répondre à des questions,
+ réaliser des recherches et inspirer des idées originales pour des projets artistiques ou des
+ compositions musicales, tout en assistant les utilisateurs dans la rédaction d'essais, de
+ rapports ou la traduction de textes.
+
+
+Mais, l’IA peut avoir des effets négatifs sur la société :
+
+ ● Risque de passivité intellectuelle : l'IA peut priver de la nécessité de réfléchir et de résoudre
+ des problèmes par nous-mêmes.
+ ● Impact environnemental : L'intégration de l'IA entraîne une consommation énergétique
+ considérable, ce qui contribue à accroître les émissions de carbone.
+ ● Perte d'emplois : Des emplois sont susceptibles d'être remplacés par des systèmes d'IA
+ capables de traiter et d'analyser des informations beaucoup plus rapidement et efficacement
+ que les humains.
+ ● Dépendance technologique : Une dépendance excessive à l'IA peut rendre les
+ individus et les organisations vulnérables en cas de panne ou de
+ dysfonctionnement des systèmes.
+ ● Biais et discrimination : l’IA peut conduire à des décisions injustes ou
+ discriminatoires. Par exemple, un système de reconnaissance faciale peut
+ être
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1f
+
+
+=== NOUVELLE FICHE ===
+
+ plus précis pour les hommes blancs que pour les femmes noires, ou discriminer les candidats
+ en fonction de leur nom ou de leur adresse.
+ ● Impact sur la vie privée et la sécurité des données (Big Data) : La collecte et l'analyse de
+ grandes quantités de données peuvent nuire à la vie privée et de sécurité des données.
+ ● Création de fausses nouvelles (Fake News) : Des articles de presse ou des vidéos (Deepfakes) sont
+ en fait des faux, très réalistes: Ils peuvent être utilisés pour tromper les gens.
+ Deepfakes : Vidéos où le visage d'une personne est substitué par celui d'une autre, permettant de faire
+ dire à cette personne des choses qu'elle n'a jamais dites.
+
+Comment se prémunir des effets négatifs des IA ?
+
+ ● Apprendre et comprendre. Se renseigner sur ce qu'est l'IA et comment elle fonctionne peut
+ aider à prendre des décisions éclairées lors de son utilisation.
+ ● Être vigilant. Lorsque l'on utilise des applications ou des services qui utilisent l'IA, il faut être
+ conscient des informations que l’on partage et si possible comprendre comment vos données
+ sont utilisées.
+ ● Utiliser avec prudence : Ne pas se fier uniquement à elles pour prendre des décisions
+ importantes. Gardez à l'esprit qu'elles peuvent parfois faire des erreurs ou présenter des biais.
+ ● Être conscient des biais et des stéréotypes qui peuvent être véhiculés dans la société et
+ signaler aux moteurs de recherche ou aux applications d’IA des prédictions inappropriées.
+
+
+ ● Mettre en question, raisonner sur les résultats
+ produits par les IA génératives. Avant d'utiliser l'IA, il
+ faut apprendre et s'entraîner à sélectionner et traiter
+ les informations afin de raisonner et développer
+ l’esprit critique face à l'information. Car elle est
+ capable de le faire à notre place…
+ ● Exiger des décideurs politiques des normes éthiques et
+ responsables en matière d'IA.
+ ● Exiger des concepteurs d'IA de rendre leurs algorithmes
+ plus transparents en fournissant des explications sur
+ leur fonctionnement, afin de garantir une meilleure
+ compréhension, une plus grande transparence, pour garantir la protection de la vie privée et
+ des droits de l'homme, ainsi que la réduction des biais et des discriminations.
+
+
+L'impact de l'intelligence artificielle (IA) a des effets positifs tels que l'amélioration
+de la santé, de l'éducation, de la sécurité et de l'innovation.
+Mais elle a aussi des défis à relever, notamment sur les risques de biais et de
+discrimination, les préoccupations liées à la gestion des données personnelles,
+ainsi que la propagation des fausses nouvelles via les Fakenews et Deepfakes.
+Il est essentiel de développer un esprit critique face aux résultats produits entre
+autres par les IA génératives.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1f
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Usages et impacts sociétaux du numérique Cycle 4
+
+ Fichiers informatiques (fichier texte, fichier image, fichier de type tableur ou CSV) et
+ Connaissance
+ dossiers, arborescence
+
+
+Lorsqu’on utilise un ordinateur, un smartphone, ou tout autre objet connecté, on
+manipule des informations sous différents formats : photos, textes, musique, etc.
+Ces informations sont stockées sous forme de fichiers informatiques. Savoir
+organiser et sauvegarder ces fichiers afin de les retrouver facilement est
+essentiel pour travailler efficacement.
+
+Fichiers informatiques : un fichier est un ensemble
+d'informations regroupées sous un même nom et
+identifiées par une extension (exemples d’extensions :
+.odt ou .doc pour un document texte, .jpg ou .gif pour une
+image). Chaque type de fichier est associé à un logiciel
+pour le lire ou le modifier.
+
+Dossiers : un dossier est un espace de
+rangement virtuel pour organiser vos fichiers. Il
+peut contenir d'autres dossiers, créant ainsi une
+arborescence (structure en branches) pour mieux
+classer vos informations.
+
+Arborescence : c'est l'organisation des
+dossiers et sous-dossiers, semblable à un
+arbre avec ses branches et ses feuilles. Chaque
+dossier est un "nœud" de l'arborescence.
+
+Pour organiser les fichiers, il faut savoir :
+
+ ● Créer et organiser des fichiers et dossiers pour classer les documents, photos, musiques,
+ etc. Il est important de choisir des noms clairs et précis pour les retrouver facilement.
+ ● Renommer et déplacer des fichiers et dossiers, modifier le nom d'un fichier ou d'un dossier
+ pour mieux le décrire. On peut également les déplacer pour les organiser différemment.
+ ● Copier et supprimer des fichiers et dossiers pour les dupliquer ou les partager. On peut
+ également les supprimer quand on n’en a plus besoin.
+
+
+Les fichiers informatiques et les dossiers constituent des éléments essentiels
+pour organiser et stocker les données numériques. Les dossiers et sous-dossiers
+servent d'espaces de rangement pour les fichiers. L'arborescence désigne
+l'organisation de ces dossiers et sous-dossiers qui contiennent les fichiers.
+Cette structure permet de gagner du temps et de retrouver facilement les
+informations dont nous avons besoin.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1g
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Usages et impacts sociétaux du numérique Cycle 4
+
+ Système d’information et stockage des données : extension et format de fichiers, droits
+ Connaissance
+ d’écriture et de lecture sur les fichiers
+
+Lorsqu’on utilise un ordinateur, un smartphone, ou tout autre objet connecté, on
+utilise et stocke de nombreux fichiers ( photos, textes, musique…). Pour les utiliser il
+faut connaître les notions d'extension, de format et de droits d'accès de ces
+fichiers.
+
+Extension : C'est la suite de caractères après le point dans
+le nom d'un fichier. Elle indique le type de fichier et le logiciel
+qui peut l'ouvrir et/ou le modifier.
+
+Par exemple, ".odt" est l'extension des documents texte Libre
+Office et ".mp3" est une extension des fichiers audio.
+
+
+Format : Un format de fichier est une manière standardisée de stocker des informations dans un
+fichier numérique afin que le contenu puisse être lu par des
+programmes informatiques.
+
+Par exemple, JPEG, PNG et BMP sont différents formats
+d'images.
+
+
+Droits d'accès : Ce sont les permissions accordées à un utilisateur pour savoir s’il peut lire,
+modifier et supprimer un fichier. On trouve ces droits en demandant les propriétés de chaque
+fichier. Il existe trois types de droits :
+
+● Lecture : Permet de visualiser le contenu du fichier.
+● Modification : Permet de modifier le contenu du fichier.
+● Suppression : Permet de supprimer le fichier.
+
+
+Pour utiliser ou partager les fichiers, il faut savoir :
+
+ ● Identifier l'extension d'un fichier, afin de choisir le logiciel adéquat pour l’ouvrir.
+ ● Connaître les formats les plus courants pour chaque type de fichier, afin de les
+ reconnaitre dans une arborescence.
+ ● Modifier les droits d'accès d'un fichier, pour pouvoir les partager en toute sécurité.
+
+Dans un système d’information et de stockage de données, il faut connaître les
+caractéristiques des fichiers. L’extension indique le type de fichier et les logiciels
+qui permettent de l’ouvrir. Le format permet de savoir si c’est une image, un texte
+… Les droits d’un fichier permet de savoir les permissions accordées (lecture,
+écriture, suppression ...).
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1h
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Usages et impacts sociétaux du numérique Cycle 4
+
+ Système d’information et stockage des données : unité de quantité d’information : bit,
+  Connaissance
+ octet et leurs multiples
+
+
+Les informations numériques que l’on utilise dans un système d’information sont
+stockées sous forme de bit et octet.
+
+
+ ● Un bit, abréviation de "binary digit", est l'unité
+ d'information la plus élémentaire dans
+ l'informatique.
+ Il représente la plus petite quantité d'information pouvant
+ être stockée ou transmise. Un bit ne peut prendre que
+ deux valeurs : 0 ou 1.
+
+ ● Un octet est un groupe de 8 bits. En les combinant, on
+ obtient 256 valeurs différentes, suffisant pour coder
+ tous les caractères de l'alphabet, les chiffres et les
+ symboles.
+
+ Par exemple : la lettre A = la combinaison en octet de 0100 0001, la lettre B = la combinaison
+ en octet de 0100 0010
+
+
+ ● Les multiples de l'octet sont utilisés pour mesurer To Go Mo Ko Octets
+ des quantités d'information plus importantes.
+ 1
+
+
+ 1 000
+
+
+ 1 000 000
+
+
+ 1 000 000 000
+
+
+ 1 000 000 000 000
+
+
+L’unité de quantité d’information élémentaire en informatique est le bit. Il peut
+prendre deux valeurs 0 ou 1.
+L’octet est une combinaison de 8 bits qui servent à coder les caractères de
+l’alphabet, les chiffres, les symboles.
+Les multiples de l'octet sont le kilo octet (Ko), mégaoctet (Mo), gigaoctet (Go),
+téraoctet (To).
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1i
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Usages et impacts sociétaux du numérique Cycle 4
+
+ Système d’information et stockage des données : ordre de grandeur de la taille d’un fichier image, d’un
+  Connaissance
+ fichier son, d’une vidéo
+
+
+Lorsqu’on stocke et utilise des fichiers numériques,
+il faut avoir conscience de l’ordre de grandeur de la
+taille des fichiers images, de son et d’une vidéo.
+
+La taille des fichiers impactent le volume d’espace de
+stockage nécessaire pour les enregistrer, mais aussi le temps
+pour les faire circuler dans le système d’information.
+
+Ordre de grandeur des fichiers images, sons et vidéo
+
+ Fichier image Fichier son Fichier vidéo
+
+ Ordre de grandeur Quelques Ko Dizaines de Ko Dizaines de Mo
+ de la taille à des dizaines de Mo à plusieurs Mo par minute à quelques Go par minute
+
+ Éléments en lien Dimension de l’image, format, Niveau de compression, Format, Résolution (nombre
+ avec la taille résolution (nombre de pixels) durée, … de pixels), durée, …
+
+ Photo basse résolution : 1 à 5
+ Vidéo YouTube HD : 100 Mo à 1
+ Mo Chanson : environ 1
+ Exemples Go/min
+ Photo haute résolution : 10 à Mo/min
+ Film HD : 1 à 2 Go/min
+ 50 Mo
+
+Pour limiter la taille d’un fichier, on agit sur plusieurs
+paramètres : le format, la résolution de l’image, le niveau de
+compression, la durée d’enregistrement (son et vidéo).
+
+La taille des fichiers numériques varie considérablement, allant de quelques Ko à
+plusieurs Go, selon leur type (image, son, vidéo) et leurs caractéristiques
+(résolution, durée, compression).
+Ceci impacte le stockage et la transmission des fichiers : plus un fichier est
+volumineux, plus il requiert d'espace et de temps.
+Pour optimiser la taille des fichiers, il est possible d'agir sur différents paramètres,
+tels que le format, la résolution ou la durée d'enregistrement.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1j
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Usages et impacts sociétaux du numérique Cycle 4
+
+ Système d’information et stockage des données : incidences liées au stockage, au flux
+  Connaissance
+ des données et aux réseaux d’information
+
+L'utilisation croissante des technologies numériques génère un volume massif
+de données qui sont stockées, transmises et traitées via des réseaux d'information.
+Cela a des incidences quotidiennes liées au stockage, au flux des données et aux
+réseaux d’information.
+
+
+Incidences liées au stockage de données :
+
+ ● Confidentialité et sécurité des données: Les données
+ stockées, qu'elles soient personnelles, sensibles ou
+ commerciales, doivent être protégées contre les accès non
+ autorisés, les fuites de données et les cyberattaques.
+ ● Coût du stockage: Le stockage de grandes quantités de
+ données peut engendrer des coûts importants en
+ infrastructure, maintenance et énergie.
+ ● Qualité des données: La qualité des données stockées doit
+ être maintenue pour garantir leur fiabilité, leur cohérence et
+ leur accessibilité.
+ ● Obsolescence des données: Les données stockées
+ peuvent devenir obsolètes avec le temps et nécessiter une gestion appropriée pour éviter
+ l'accumulation de données inutiles.
+
+Incidences liées au flux des données :
+
+ ● Bande passante et congestion du réseau: Le flux de
+ données volumineux peut saturer la bande passante
+ des réseaux, entraînant une lenteur des connexions et
+ une dégradation des performances.
+ ● Sécurité des communications: Les données
+ transmises sur les réseaux doivent être protégées
+ contre l'interception, la modification ou la destruction.
+ ● Vie privée et protection des données personnelles:
+ La collecte, la transmission et l'utilisation des données
+ personnelles doivent respecter les principes de
+ protection de la vie privée et les réglementations en
+ vigueur.
+ ● Qualité de service: Le flux des données doit être fluide et fiable pour garantir une bonne
+ qualité de service aux utilisateurs.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1k
+
+
+=== NOUVELLE FICHE ===
+
+Incidences liées aux réseaux d'information :
+
+ ● Fiabilité et disponibilité des réseaux: Les réseaux
+ d'information doivent être fiables et disponibles pour
+ assurer une continuité de service et éviter les
+ interruptions d'activité.
+ ● Sécurité des infrastructures réseau: Les
+ infrastructures réseau doivent être protégées contre
+ les cyberattaques, les pannes matérielles et les
+ logiciels malveillants.
+ ● Gestion de la complexité: Les réseaux
+ d'information deviennent de plus en plus complexes,
+ nécessitant une gestion rigoureuse et une expertise
+ technique pointue.
+ ● Obsolescence des technologies: Les technologies réseau évoluent rapidement, ce qui
+ implique des mises à jour régulières et une adaptation aux nouveaux standards.
+
+
+Les incidences liées au stockage, au flux des données et aux réseaux
+d'information sont multiples et complexes. Elles nécessitent une attention
+particulière de la part des individus, des organisations pour garantir une utilisation
+responsable, sécurisée et éthique des technologies numériques.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1k
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Usages et impacts sociétaux du numérique Cycle 4
+
+ Cybersécurité : protection des données personnelles, traces numériques (témoins de
+ Connaissance connexion, géolocalisation), identification, authentification, respect de la propriété
+ intellectuelle
+
+Lorsque l’on navigue sur Internet, on laisse des traces numériques : une adresse IP, un historique
+de navigation des sites visités ou les recherches effectuées. Ces informations peuvent être
+utilisées pour tracer l’utilisateur, l'identifier, lui voler ses données personnelles…
+
+La cybersécurité vise à se protéger contre ces dangers et à garantir la sécurité de nos données.
+
+Il faut connaître les informations qui peuvent être ciblées par malveillance :
+
+ ● Données personnelles : toutes les informations concernant l’utilisateur, comme
+ le nom, l’adresse, le numéro de téléphone ou des photos privées.
+
+ ● Traces numériques : informations laissées sur Internet, comme
+ l’historique de navigation, les cookies ou les messages sur les
+ réseaux sociaux.
+
+ ● Géolocalisation : position géographique déterminée grâce aux
+ GPS des smartphones ou aux adresses IP des ordinateurs.
+
+ ● Identification : processus qui permet de déterminer l'identité
+ d’une personne.
+
+ ● Authentification : processus qui permet d’autoriser des accès à
+ des ressources informatiques.
+
+ ● Propriété intellectuelle : ensemble des droits qui protègent les créations
+ intellectuelles, comme les inventions, les œuvres littéraires et artistiques ou les
+ logiciels.
+
+Pour se protéger des dangers et garantir la sécurité des informations, il convient de :
+ 1. Protéger les données personnelles : Ne jamais donner d’informations personnelles à des
+ inconnus, utiliser des mots de passe forts et uniques pour chaque compte, et activer
+ l'authentification à deux facteurs.
+
+ 2. Gérer les traces numériques : Supprimer régulièrement les cookies, utiliser un navigateur web
+ privé pour les recherches et configurer les paramètres de confidentialité sur les réseaux sociaux.
+
+ 3. Respecter la propriété intellectuelle : Ne pas copier ou télécharger illégalement du contenu
+ protégé par des droits d'auteur, et toujours citer les sources que l’on utilise.
+
+La cybersécurité est la pratique consistant à protéger les systèmes, les réseaux et
+les programmes contre les attaques numériques. Ces cyberattaques visent
+généralement à accéder à des informations sensibles, à les modifier ou à les détruire,
+à extorquer de l'argent aux utilisateurs. Il existe des moyens simples de se protéger,
+comme utiliser des mots de passe forts, gérer ses traces numériques et respecter
+la propriété intellectuelle.
+
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1l
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Usages et impacts sociétaux du numérique Cycle 4
+
+  Connaissance Cyberviolence : usurpation d’identité, usage détourné
+
+Lorsque l’on utilise Internet et les réseaux sociaux, on peut être confronté à la
+cyberviolence. Il est important de savoir ce qu'est la cyberviolence et comment s’en
+protéger.
+
+La cyberviolence peut prendre
+plusieurs formes :
+
+ ● Cyberviolence : Actes malveillants commis
+ par le biais des technologies numériques, tels
+ que les insultes, les menaces, le
+ harcèlement ou la diffusion de photos ou
+ vidéos privées.
+
+ ● Usurpation d'identité : Utilisation de
+ l'identité d'une autre personne sans son
+ consentement pour commettre des actes
+ malveillants.
+
+ ● Usage détourné : Utilisation d'une image ou
+ d'une information à des fins malveillantes,
+ sans l'autorisation de la personne concernée.
+
+Afin de mieux se protéger des cyberviolences, on peut :
+ ● Ne pas répondre aux cyberviolences : ignorer les messages et les commentaires haineux.
+ ● Conserver les preuves : sauvegarder les messages, les commentaires et les captures
+ d'écran des cyberviolences.
+ ● En parler à un adulte de confiance : parents, professeurs, éducateurs ou responsables
+ associatifs.
+ ● Signaler les cyberviolences : aux plateformes sur Internet et aux autorités.
+
+
+La cyberviolence se manifeste par des actes malveillants tels que le harcèlement,
+la diffusion de contenus privés ou l'usurpation d'identité. Pour s'en protéger, il est
+important de ne pas répondre aux agressions, de conserver les preuves et d'en
+parler à un adulte de confiance. Il est également possible de signaler les
+cyberviolences aux plateformes concernées et aux autorités.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST1m
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’OST dans son environnement Cycle 4
+
+ Les interacteurs extérieurs : usagers, données, autres objets, éléments de
+  Connaissance
+ l’environnement
+
+Lorsqu’on utilise un objet ou un système technique (OST), il ne fonctionne jamais
+seul. Il est toujours en interaction avec d'autres éléments qui l'entourent.
+
+Un OST est en interaction avec plusieurs types d'éléments que l'on appelle des "interacteurs
+extérieurs" :
+
+ ● Les usagers : ce sont les personnes qui
+ utilisent l'objet ou le système.
+
+ ● Les données : ce sont les informations que
+ l'objet ou le système utilise pour
+ fonctionner. Elles peuvent être stockées dans
+ l'objet lui-même, comme dans un GPS, ou
+ provenir de l'extérieur, comme les
+ informations météorologiques pour une
+ application météo.
+
+ ● Les autres objets : ce sont les autres objets
+ techniques avec lesquels l'objet ou le
+ système est en contact. Par exemple, l’unité
+ centrale est en contact avec son clavier, sa
+ souris et son écran.
+
+ ● Les éléments de l'environnement : ce sont
+ les éléments naturels ou artificiels qui
+ entourent l'objet ou le système. Par
+ exemple, une éolienne est en interaction avec
+ le vent.
+
+Pour expliquer les interactions entre un OST et son environnement, il faut être capable :
+
+ ● d’identifier les différents types d'interacteurs extérieurs.
+ ● de décrire les interactions entre l'OST et chaque type d'interacteur.
+ ● d’analyser l'influence des interactions sur le fonctionnement de l'OST.
+
+
+Un objet ou système technique (OST) ne fonctionne jamais seul, il est toujours en
+interaction avec des éléments extérieurs : les usagers, les données, les autres
+objets et les éléments extérieurs. Identifier et décrire ces interactions est essentiel
+pour comprendre et utiliser l'objet.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST2a
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’OST dans son environnement Cycle 4
+
+  Connaissance Les modes de représentation : croquis, schéma, graphique, algorithme, modélisation
+
+Lorsqu’on veut comprendre le fonctionnement d'un objet technique, ou
+communiquer ses idées pour le concevoir, il est important de savoir le
+représenter de manière claire et précise. C'est là qu'interviennent différents modes
+de représentation : croquis, schéma, graphique, algorithme et modélisation.
+
+Chaque mode de représentation a ses propres caractéristiques et permet de mettre en évidence
+certains aspects de l'objet :
+
+ ● Le croquis est un dessin rapide et simplifié réalisé à main levée. Il
+ permet de représenter une idée ou un concept de manière générale.
+
+ ● Le schéma est une représentation simplifiée, symbolique et
+ normalisée d'un objet ou d'un système. Il met en évidence les
+ éléments importants et leurs relations.
+
+ ● Le graphique est une représentation visuelle de données sous
+ forme de points, de lignes ou de barres. Il permet de visualiser
+ l'évolution d'une grandeur ou de comparer plusieurs données.
+
+ ● L'algorithme est une suite d'instructions ordonnées et précises
+ qui permet de réaliser une tâche. Il est souvent représenté sous forme
+ de diagramme.
+
+ ● La modélisation est la création d'un modèle numérique ou
+ physique d'un objet ou d'un système. Le modèle permet de simuler
+ son comportement et de tester différentes solutions.
+
+
+Les modes de représentation sont des outils essentiels pour expliquer, concevoir et
+communiquer sur les objets techniques. Il existe le croquis, qui permet de représenter une
+idée à main levée ; le schéma, représentation symbolique d’un objet ou d’un système ; le
+graphique, représentation visuelle de données ; l’algorithme suite d’instructions ordonnées
+et précises et la modélisation, création d’un modèle numérique ou physique. Il est important
+de connaître les caractéristiques et les usages de chaque mode de représentation pour
+utiliser celui qui est le plus adapté à la représentation souhaitée.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST2b
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’OST dans son environnement Cycle 4
+
+ Les contraintes : prise en compte des exigences issues des normes ou d'un cahier des
+  Connaissance
+ charges, labels et certifications
+
+Lorsqu’on utilise un objet ou un système technique, que ce soit un smartphone,
+un vélo ou un pont, il est important de se rappeler que sa conception a été soumise
+à de nombreuses contraintes. Ces contraintes permettent de garantir la sécurité, la
+fiabilité et l'efficacité de l'objet, tout en respectant des normes et des exigences
+environnementales.
+
+Les exigences peuvent provenir de différentes sources :
+
+ ● Les normes : Elles définissent les caractéristiques minimales que doivent
+ respecter les produits pour être mis sur le marché.
+ Par exemple, la norme NF pour les jouets garantit la sécurité des enfants.
+
+
+ ● Le cahier des charges : Il s'agit d'un document qui
+ décrit les exigences spécifiques d'un client pour un objet
+ ou un système technique.
+ Par exemple, le cahier des charges d'une voiture électrique
+ précisera son autonomie, sa vitesse maximale et son temps de
+ recharge.
+
+
+ ● Les labels et certifications : Ils attestent que l'objet ou
+ le système technique répond à des critères de qualité et de
+ performance spécifiques.
+ Par exemple, le label "AB” garantit que les produits alimentaires sont
+ issus de l'agriculture biologique.
+
+Lorsqu'on conçoit un objet ou un système technique, il faut :
+
+ ● Identifier les différentes contraintes qui s'appliquent au projet.
+
+ ● Analyser ces contraintes et choisir les solutions les plus adaptées pour les respecter.
+
+ ● Vérifier que l'objet ou le système technique répond bien à toutes les exigences.
+
+
+Les normes, les cahiers des charges, les labels et les certifications sont des
+exigences importantes pour garantir la qualité, la sécurité et le bon
+fonctionnement des objets et systèmes techniques. Ils permettent également de
+limiter l'impact environnemental de ces objets ou systèmes techniques. Il est
+important de connaître ces exigences et de savoir les prendre en compte lors de la
+conception, la fabrication, et l’utilisation d'un objet ou système technique.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST2c
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ L’OST dans son environnement Cycle 4
+
+ Connaissance L’ergonomie liée à l’usage
+
+Lorsqu’on utilise un objet ou un système technique (OST), on remarque que
+certains sont plus faciles à utiliser que d'autres grâce à leur ergonomie.
+
+L'ergonomie est une discipline qui vise à adapter l'objet à l'utilisateur pour le rendre plus facile
+et plus sûr à utiliser. Elle étudie la relation entre l'Homme et la Machine pour concevoir des
+produits qui leur sont adaptés.
+
+Les principaux objectifs de l’ergonomie liée à l’usage :
+
+ ● Améliorer la satisfaction des utilisateurs : l'objet
+ doit offrir une expérience utilisateur agréable et
+ intuitive.
+
+ ● Améliorer l’efficacité : l'objet doit permettre à
+ l'utilisateur d'accomplir sa tâche rapidement et sans
+ erreurs.
+
+ ● Réduire la fatigue et les troubles
+ musculo-squelettiques : L’objet doit favoriser une
+ posture adéquate en limitant les gestes répétitifs.
+
+ ● Améliorer la sécurité : l'objet doit être conçu pour
+ minimiser les risques d'accidents.
+
+Pour respecter les objectifs, les ergonomes étudient
+les caractéristiques des utilisateurs, comme leur
+taille, leur force et leurs capacités cognitives. Ils
+analysent également l'environnement dans lequel
+l'objet sera utilisé.
+Pour évaluer l'ergonomie d'un objet, il faut être capable :
+ ● d’identifier les différents aspects de l'ergonomie
+ (confort, efficacité, sécurité).
+ ● d’analyser les caractéristiques des utilisateurs
+ et de l'environnement.
+ ● de tester l'objet et identifier les points d'amélioration.
+
+
+L'ergonomie liée à l'usage des objets et systèmes techniques est une discipline qui
+vise à concevoir des solutions techniques qui soient à la fois efficaces, sûres,
+confortables et satisfaisantes pour les utilisateurs. En appliquant les principes
+d'ergonomie, il est possible de créer des produits, des interfaces et des systèmes qui
+répondent aux besoins des utilisateurs et contribuent à améliorer leur bien-être
+et leur performance.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST2d
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Le choix d’un OST dans un contexte de développement durable Cycle 4
+
+ Connaissance Les composantes d’une notice et d’une documentation technique et leur organisation
+
+Lorsqu’on doit utiliser un objet ou un système technique (smartphone,
+étagère…), il est important de connaître son fonctionnement et fonctionnalités.
+
+La notice et la documentation technique entrent alors en jeu permettant de se familiariser avec
+l'objet et de l'utiliser en toute sécurité.
+La notice est un document plus court et concis qu’une documentation
+technique qui comprend les éléments suivants :
+ ● Couverture: Elle doit identifier le produit ou le système, le nom du fabricant et le
+ numéro de modèle.
+ ● Table des matières: Elle permet aux utilisateurs de trouver rapidement les
+ informations dont ils ont besoin.
+ ● Introduction: Elle présente le produit ou le système et décrit ses principales
+ fonctionnalités.
+ ● Instructions d'installation: Elles expliquent comment installer le produit ou le
+ système, étape par étape.
+ ● Mode d'emploi: Il explique comment utiliser le produit ou le système, en
+ décrivant ses différentes fonctionnalités et en fournissant des instructions pour
+ chaque fonction.
+ ● Consignes de sécurité: Elles indiquent les précautions à prendre pour utiliser le
+ produit ou le système en toute sécurité.
+ ● Dépannage: Il fournit des solutions aux problèmes courants que les utilisateurs peuvent rencontrer.
+ ● Garantie: Elle décrit les conditions de la garantie du produit ou du système.
+ ● Informations de contact: Elles indiquent comment contacter le fabricant ou le service après-vente pour obtenir
+ de l'aide.
+
+La documentation technique est plus détaillée et comprend les éléments suivants :
+ ● Les éléments que l’on trouve dans une notice, avec en plus :.
+ ● Guide de maintenance: Il explique comment entretenir le produit
+ ou le système, y compris les procédures de nettoyage, de
+ lubrification et de remplacement des pièces.
+ ● Guide de réparation: Il fournit des instructions pour réparer le
+ produit ou le système en cas de panne.
+ ● Schémas et diagrammes: Ils illustrent le fonctionnement du
+ produit ou du système.
+ ● Glossaire et index : Il définit les termes techniques utilisés dans
+ la documentation et permet de trouver rapidement les informations
+ dont on a besoin.
+
+Pour utiliser un objet ou système technique en toute sécurité et efficacement, il
+est indispensable de consulter la notice et/ou la documentation technique.
+La notice est un document court qui contient les informations essentielles pour
+l'installation, l'utilisation et le dépannage du produit. La documentation technique est
+plus détaillée et fournit des instructions pour la maintenance et la réparation du
+produit, ainsi que des schémas, un glossaire et un index.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST3a
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Le choix d’un OST dans un contexte de développement durable Cycle 4
+
+  Connaissance L’indice énergétique et l’indice de réparabilité
+
+Lorsqu’on doit acheter un appareil électrique ou électronique, il est important de
+choisir un modèle qui soit à la fois performant et durable. Deux indices peuvent
+aider à faire ce choix : l'indice énergétique et l'indice de réparabilité.
+
+L'indice énergétique : C’est une note sur une
+échelle de A à G qui indique la consommation
+d'énergie d'un appareil (A+++ étant le plus
+économe). Cet indice permet de comparer les
+appareils entre eux et de choisir celui qui sera le
+plus économe en énergie.
+
+L'indice de réparabilité : C’est une note qui indique la
+facilité de réparation d'un appareil sur une échelle de 1 à 10
+(10 étant le plus facile à réparer). Il permet de choisir un
+appareil durable qu’on pourra réparer en cas de panne. Il
+encourage les fabricants à concevoir des produits plus
+réparables et à réduire les déchets électroniques.
+
+
+Pour choisir un appareil performant et durable, il faut :
+
+ ● Privilégier les appareils avec un indice énergétique
+ élevé (A+++ ou A++).
+ ● Choisir des appareils avec un indice de réparabilité élevé (supérieur à 7).
+ ● Se renseigner sur la disponibilité des pièces détachées et le coût des réparations.
+
+
+Pour un achat responsable d'un appareil électrique ou électronique, privilégiez
+les modèles performants et durables en vous basant sur l'indice énergétique et
+l'indice de réparabilité. L'indice énergétique (A+++ le plus économe) renseigne
+sur la consommation d'énergie de l'appareil, permettant de choisir le plus
+performant. L'indice de réparabilité (10 le plus facile à réparer) indique la durabilité
+de l'appareil et sa capacité à être réparé en cas de panne. En optant pour des
+appareils à haute performance énergétique et réparabilité élevée, vous réduisez votre
+impact environnemental et faites des économies.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST3b
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Le choix d’un OST dans un contexte de développement durable Cycle 4
+
+  Connaissance Les impacts environnementaux (indicateurs : air, eau, sol et santé)
+
+Lorsqu’on choisit un objet ou un système technique (OST) dans un contexte de
+développement durable, on doit savoir quels sont ses impacts sur
+l’environnement.
+
+Les impacts environnementaux sont l’ensemble des
+modifications de l’environnement (négatifs ou positifs)
+engendrées par un objet ou système technique de sa
+conception à sa fin de vie.
+
+Quatre indicateurs peuvent être utilisés pour observer
+les impacts environnementaux :
+
+ - incidences sur l’air : augmentation ou réduction
+ des émissions de gaz à effet de serre
+ - incidences sur l’eau : pollution ou protection
+ des ressources en eau
+ - incidences sur les sols : artificialisation des
+ sols (dégradation des qualités naturelles) ou
+ préservation des espaces naturels
+ - incidences sur la santé : exposition à des
+ risques sanitaires ou amélioration des conditions
+ sanitaires.
+
+Ces indicateurs doivent être observés à chaque étape
+du cycle de vie de l’objet : sa conception, sa
+fabrication, son utilisation et sa fin de vie.
+
+Pour choisir un objet ou système technique en tenant compte
+des impacts environnementaux, il faut :
+ ● Connaître les indicateurs pour analyser les impacts
+ environnementaux d’un OST
+ ● Savoir repérer tous les impacts à chaque étape du cycle de vie du produit.
+
+
+Les impacts environnementaux sont l’ensemble des modifications de
+l’environnement (négatifs ou positifs) engendrées par un objet ou système
+technique de sa conception à sa fin de vie. Pour choisir un OST, quatre indicateurs
+peuvent être utilisés en observant les incidences sur l’air, l’eau, le sol et sur la
+santé.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST3c
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Le choix d’un OST dans un contexte de développement durable Cycle 4
+
+  Connaissance Les piliers du développement durable et les différentes étapes du cycle de vie d’un OST
+
+Lorsqu’on choisit un objet ou un système technique (OST) dans un contexte de
+développement durable, on doit connaître les piliers du développement durable et le
+cycle de vie de cet OST.
+
+Le développement durable s’appuie sur trois piliers :
+
+ - le pilier économique : créer de la richesse
+ pour tous, sans nuire à la planète ou aux
+ générations futures
+ - le pilier social : lutter contre les inégalité
+ - le pilier environnement : préserver la
+ diversité des espèces et les ressources
+ naturelles.
+
+Le cycle de vie d’un OST est le parcours de
+sa vie, de sa conception à sa fin de vie. Il
+existe 5 étapes :
+
+ - l’extraction des matières premières,
+ - la fabrication,
+ - le transport,
+ - l’utilisation,
+ - la fin de vie : recyclage (matériaux de
+ l’OST utilisés pour créer un nouvel
+ objet), valorisation (OST utilisé pour
+ une autre utilité) ou destruction (OST
+ enterré ou brûlé).
+
+Chaque étape doit respecter le développement durable.
+
+Pour choisir un objet ou système technique qui respecte l’environnement, il faut :
+ ● Connaître les 3 piliers du développement durable
+ ● Savoir lister les étapes de son cycle de vie
+
+Le développement durable s’appuie sur l’équilibre entre trois piliers : pilier
+économique, pilier environnemental et pilier social.
+Le cycle de vie d’un OST est le parcours de sa naissance à sa fin de vie. Il
+comporte 5 étapes : extraction des matières premières, fabrication, transport,
+utilisation et fin de vie. Ces étapes doivent respecter le développement durable.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST3d
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ Le choix d’un OST dans un contexte de développement durable Cycle 4
+
+  Connaissance Les critères de choix : la qualité, l’efficacité énergétique, la durabilité, la recyclabilité
+
+Lorsque l’on doit choisir un objet technique, comme un smartphone, un ordinateur
+ou un appareil électroménager, il est important de prendre en compte plusieurs
+critères et de se poser les bonnes questions pour faire un choix responsable et
+durable.
+
+
+Les 4 critères de choix et les questions associées pour choisir un objet technique
+durable sont :
+ ● la qualité : l'objet est-il robuste, fiable et conçu pour durer ?
+ ● l’efficacité énergétique : l'objet consomme-t-il peu d'énergie ?
+ ● la durabilité : l'objet a-t-il une longue durée de vie et peut-il être réparé ?
+ ● la recyclabilité : l'objet peut-il être recyclé en fin de vie ?
+
+
+Points de vigilance pour la qualité :
+
+ ● Matériaux : privilégier les matériaux durables, recyclables et non
+ toxiques (ex : métal, verre, bois).
+ ● Fabrication : choisir des produits fabriqués dans des conditions
+ éthiques et responsables (ex : labels Fair Trade, FSC).
+ ● Garantie : opter pour un produit avec une garantie longue durée
+ (ex : 2 ans minimum).
+
+Points de vigilance pour l’efficacité énergétique :
+
+ ● Labels : privilégier les produits avec des labels
+ d'efficacité énergétique (ex : A, Energy Star).
+
+ ● Consommation : comparer la consommation
+ d'énergie des différents modèles (ex : kWh/an).
+
+ ● Modes d'utilisation : adopter des gestes
+ éco-responsables pour réduire la consommation
+ d'énergie (ex : mode économie d'énergie,
+ éteindre l'appareil lorsqu'il n'est pas utilisé).
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 2 OST3e
+
+
+=== NOUVELLE FICHE ===
+
+Points de vigilance pour la durabilité :
+
+ ● Réparabilité : choisir un produit facile à réparer et pour lequel
+ des pièces détachées sont disponibles (ex : Smartphone
+ Fairphone 5®).
+
+ ● Évolutivité : privilégier les produits évolutifs pour éviter
+ l'obsolescence programmée (ex : possibilité de rajouter de la
+ mémoire vive, ou changer la batterie facilement).
+
+ ● Usage : entretenir l'objet correctement pour prolonger sa durée de vie (ex :
+ nettoyage régulier, respect des consignes d'utilisation).
+
+Points de vigilance pour la recyclabilité :
+
+ ● Matériaux : privilégier les produits fabriqués avec des matériaux
+ recyclables (ex : bois, aluminium).
+
+ ● Consignes de tri : respecter les consignes de tri pour que l'objet soit
+ recyclé en fin de vie (ex : bac jaune pour les emballages en plastique
+ ou métal).
+
+Pour choisir un objet ou système technique, il faut :
+ ● Analyser les 4 critères de choix en fonction des besoins et des priorités
+ du client.
+
+ ● Comparer les différents modèles d'un même objet technique (ex : lire les
+ avis des consommateurs, comparer les fiches techniques).
+
+ ● Privilégier les produits durables et éco-responsables (ex : produits
+ d'occasion, reconditionnés, éco-labellisés).
+
+ ● Utiliser l'objet de manière responsable pour réduire son impact
+ environnemental (ex : utiliser les modes éco, éteindre l'appareil lorsqu'il
+ n'est pas utilisé).
+
+Choisir un objet technique durable est un geste important pour protéger
+l'environnement et notre santé.
+
+La qualité, l'efficacité énergétique, la durabilité et la recyclabilité sont des critères
+qui permettent de faire un choix responsable et contribuer à un avenir plus
+durable.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 2/ 2 OST3e
+
+
+=== NOUVELLE FICHE ===
+
+ LES OBJETS ET SYSTÈMES TECHNIQUES : leurs usages et leurs
+ indications à découvrir et analyser
+
+ La performance des OST Cycle 4
+
+ Les critères de performance d’un OST (grandeurs mesurables : vitesse, autonomie
+  Connaissance
+ énergétique)
+
+Lorsqu’on compare plusieurs objets ou systèmes techniques entre eux (vélos,
+trottinettes, smartphones…), on se pose souvent des questions sur leurs
+performances : lequel est le plus rapide ? Lequel a la meilleure autonomie ?…
+
+Pour nous aider à faire un choix, il est important de comprendre les critères de performance d'un
+objet ou d’un système technique (OST).
+
+
+Un objet ou système technique est conçu pour répondre à un
+besoin. Sa performance correspond à sa capacité à répondre à
+ce besoin de manière efficace. On peut évaluer la performance
+d'un Objet ou Système Technique à partir de plusieurs
+critères, qui sont généralement des grandeurs mesurables.
+
+Exemples de grandeurs mesurables :
+
+ ● La vitesse : qui peut être exprimée en km/h, m/s, etc…
+ ● L'autonomie énergétique (durée pendant laquelle l'Objet ou Système Technique peut
+ fonctionner sans être rechargée). Elle peut s'exprimer en heures, minutes, etc...
+
+D'autres critères peuvent être importants pour évaluer la performance d'un objet ou système
+technique, comme la fiabilité, la sécurité, le confort, l'impact environnemental, etc…
+
+
+ Pour comparer les performances d’au moins deux objets
+ ou systèmes techniques, il faut :
+
+ 1. Identifier les critères de performances adaptés pour
+ l'usage que l’on veut faire de l'objet.
+
+ 2. Mesurer les valeurs de ces critères pour chaque
+ objet ou système technique.
+
+ 3. Comparer les valeurs mesurées et choisir l'Objet
+ ou Système Technique qui répond le mieux à nos besoins.
+
+Lorsqu'on compare des objets techniques, il est important de s'intéresser à leurs
+performances pour faire un choix éclairé. La performance d'un objet technique est
+sa capacité à répondre à un besoin de manière efficace. Elle peut être évaluée à
+l'aide de critères mesurables comme la vitesse ou l'autonomie, mais aussi la
+fiabilité, le confort ou l'impact environnemental.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 OST3f
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Fonctions, solutions, constituants de la chaîne d’énergie Cycle 4
+
+ Les différentes formes d’énergie : électrique, cinétique, potentielle, thermique,
+  Connaissance
+ lumineuse (rayonnement)
+
+Lorsque l’on allume un smartphone ou une lampe ou que l’on fait du vélo, on utilise
+différentes formes d'énergie.
+
+L'énergie, c'est la force qui permet de réaliser un travail, de produire un
+mouvement, de modifier la température.
+Par exemple, une voiture a besoin d'énergie pour avancer, et cette énergie vient du moteur qui brûle
+du carburant.
+
+L’énergie se présente sous différentes formes :
+ ● Énergie électrique : c'est l'énergie qui permet de faire fonctionner
+ les appareils électriques, comme les lampes, les ordinateurs et les
+ téléphones portables. Elle est produite par des centrales électriques
+ qui utilisent différentes sources d'énergie, telles que le charbon, le gaz
+ naturel, l'eau, le soleil ou l’uranium.
+
+ ● Énergie cinétique : c'est l'énergie que possède un objet en
+ mouvement. Plus un objet est lourd et plus il va vite, plus il possède
+ d'énergie cinétique.
+
+ ● Énergie potentielle : c’est une réserve d’énergie stockée dans un
+ objet immobile, prête à être libérée quand cet objet bouge ou change
+ de position. Par exemple, elle est stockée dans l'eau d’un barrage, prête
+ à être libérée pour faire tourner des turbines.
+
+ ● Énergie thermique : c'est l'énergie associée à la chaleur. Elle est
+ utilisée pour chauffer nos maisons et cuire les aliments. Toute action
+ produisant de la chaleur, génère de l’énergie thermique.
+
+ ● Énergie lumineuse : c'est l'énergie liée à la lumière. Elle est utilisée
+ pour nous éclairer, mais aussi pour faire fonctionner les panneaux
+ solaires.
+
+
+En technologie, il est essentiel d’identifier les différentes formes d’énergie qu’un objet technique
+utilise pour comprendre comment il fonctionne et comment il réalise des actions.
+
+
+L'énergie est indispensable pour réaliser des actions comme se déplacer, chauffer
+ou éclairer. Elle se présente sous différentes formes, comme l'énergie électrique,
+cinétique, potentielle, thermique et lumineuse.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1a
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Fonctions, solutions, constituants de la chaîne d’énergie Cycle 4
+
+ Les conversions d’énergie des constituants suivants : moteur électrique, lampe,
+ Connaissance
+ radiateur, génératrice, vérin
+
+Lorsqu’on utilise un objet ou système technique, il convertit généralement une
+forme d’énergie en une autre pour réaliser des actions.
+
+ ● Conversion d'énergie : L'énergie ne peut ni être créée ni détruite, elle ne peut que se
+ transformer d'une forme à une autre. On appelle cela une conversion d'énergie.
+
+ ● Les pertes d’énergies : la conversion d’énergie peut occasionner des pertes. En effet, ces
+ transformations peuvent entraîner la création d’énergies qui ne sont pas utiles au
+ fonctionnement de l’objet. On appelle cela des pertes.
+
+Voici quelques exemples de conversions d'énergie :
+
+Moteur électrique : convertit l'énergie électrique en
+énergie cinétique (mouvement) et thermique (chaleur).
+
+
+Lampe : convertit l'énergie électrique en énergie
+lumineuse et thermique (Chaleur).
+
+
+Radiateur : convertit l'énergie électrique en énergie
+thermique.
+
+
+Génératrice : convertit l'énergie mécanique en
+énergie électrique.
+
+
+Vérin : convertit l'énergie hydraulique ou pneumatique
+en énergie mécanique (mouvement).
+
+
+Pour expliquer une conversion d’énergie dans un objet ou un système technique, il faut :
+ ● Identifier le type d’énergie qui alimente l’objet technique.
+ ● Identifier les éléments qui vont convertir cette énergie.
+ ● Identifier le ou les types d’énergies obtenues et observer s’il y a des pertes.
+
+Les objets techniques transforment une forme d'énergie en une autre pour
+fonctionner. L’énergie électrique est convertie en énergie cinétique pour le
+moteur, en énergie lumineuse pour la lampe et énergie thermique pour le radiateur.
+L’énergie mécanique est convertie en énergie électrique pour la génératrice. Le
+vérin convertit l’énergie hydraulique ou pneumatique en énergie mécanique.
+Cette conversion s'accompagne souvent de pertes d'énergie sous forme de chaleur.
+
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1b
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Fonctions, solutions, constituants de la chaîne d’énergie Cycle 4
+
+  Connaissance Les fonctions des constituants suivants : batterie, relais/interrupteur
+
+Les appareils électriques au quotidien fonctionnent grâce à des composants
+essentiels tels que les batteries et les relais/interrupteurs.
+
+Les batteries
+ ● Leur fonction est de stocker et fournir de
+ l’énergie électrique.
+
+ ● La batterie est composée de cellules
+ électrochimiques qui convertissent l'énergie
+ chimique en énergie électrique. Les réactions
+ chimiques à l'intérieur des cellules produisent un flux
+ d'électrons, générant ainsi un courant électrique.
+
+ ● 2 types de batteries :
+ - Batteries primaires : Ne peuvent être rechargées après
+ utilisation (piles).
+ - Batteries secondaires : Peuvent être rechargées de nombreuses
+ fois (batteries rechargeables).
+
+Les relais / interrupteurs
+ ● Leur fonction est de contrôler le flux de courant électrique
+ dans un circuit.
+
+ ● Un relais est un interrupteur commandé par un courant
+ électrique. Lorsque le courant de commande circule dans la
+ bobine du relais, un contact s'ouvre ou se ferme, permettant ou
+ interrompant le passage du courant principal dans le circuit.
+ Un interrupteur, quant à lui, est un actionneur manuel qui permet de couper ou
+ de rétablir le courant dans un circuit.
+
+ ● Les types de relais et interrupteurs
+ - Relais électromagnétiques : Le courant de
+ commande active une bobine qui attire un contact
+ métallique.
+ - Relais statiques : utilisent des transistors pour
+ commander le passage du courant.
+ - Interrupteurs à bascule : Actionnés par un
+ mouvement de bascule.
+ - Interrupteurs poussoirs : Actionnés par une
+ pression.
+ - Interrupteurs tactiles : Actionnés par un contact
+ tactile.
+
+
+Les batteries, les relais et les interrupteurs permettent de commander le
+fonctionnement de nombreux objets techniques. La batterie stocke et fournit de l'énergie
+électrique.
+Le relais/interrupteur contrôle le flux de courant électrique dans un circuit.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1c
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Fonctions, solutions, constituants de la chaîne d’énergie Cycle 4
+
+ Les mécanismes de transmission et de transformation de mouvements (engrenages,
+ Connaissance
+ courroies, chaînes)
+
+Dans la chaîne d’énergie des objets et systèmes techniques, des composants
+assurent la fonction technique « Transmettre ». Pour transmettre et transformer
+les mouvements, on utilise des engrenages, courroies, chaînes.
+
+● Un mécanisme de transmission de mouvement permet de
+transmettre un mouvement sans modifier sa nature. Un mouvement
+de rotation (ou mouvement circulaire) se transmet en mouvement de rotation
+
+● Un mécanisme de transformation de mouvement permet de
+transmettre un mouvement d’une pièce à une autre en modifiant sa
+nature. Un mouvement de rotation devient par exemple un mouvement de
+translation.
+
+Ces mécanismes sont essentiels pour :
+
+● Transmettre un mouvement d'un point à un autre, comme dans le cas du vélo.
+● Modifier la vitesse de rotation, comme dans une voiture où la boîte de vitesses
+permet d'augmenter ou de diminuer la vitesse des roues.
+● Modifier le sens de rotation, comme dans le ruban correcteur dans lequel une
+roue déroule le ruban dans un sens et l’autre roue l’enroule dans l’autre sens.
+
+ Les engrenages sont des roues Les courroies et les poulies sont des Les chaînes et les pignons sont des
+ dentées qui s'engrènent les systèmes de transmission par friction. systèmes de transmission par engrenage.
+ unes dans les autres. Ils La courroie est enroulée autour des La chaîne est enroulée autour des
+ permettent de transmettre un poulies et le mouvement de rotation pignons et le mouvement de rotation
+ mouvement de rotation. d'une poulie est transmis à l'autre. d'un pignon est transmis à l'autre.
+
+Les objets et systèmes techniques utilisent des mécanismes de transmission et
+de transformation pour transmettre et modifier le mouvement. Les engrenages,
+courroies et chaînes sont des exemples courants de ces mécanismes, permettant de
+changer la direction, la vitesse ou la nature du mouvement d'un objet.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1d
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Matériaux et procédés Cycle 4
+
+  Connaissance Les caractéristiques et les propriétés des principaux matériaux
+
+Lorsque l’on construit un objet, on doit choisir le matériau le mieux adapté en
+fonction de ses caractéristiques et de ses propriétés.
+
+Différentes familles de matériaux et leurs caractéristiques :
+
+ ● Métaux : acier, aluminium, cuivre, ...
+ Caractéristiques : durs, résistants et souvent conducteurs d'électricité.
+
+ ● Matières organiques synthétiques (plastiques) : polystyrène,
+ polyéthylène…Caractéristiques : légers, malléables et souvent isolants.
+
+ ● Céramiques, minéraux : terre cuite, verre, …
+ Caractéristiques : durs, fragiles et résistants à la chaleur.
+
+ ● Matériaux organiques naturels : bois, pierre, laine, …
+ Caractéristiques : biodégradables et renouvelables.
+
+ ● Composites : béton armé, fibre de carbone,...
+ Caractéristiques : Obtenu en assemblant des matériaux différents (qui ne se
+ mélangent pas) afin d’obtenir un nouveau matériau avec des performances plus
+ intéressantes.
+
+Différentes propriétés des matériaux :
+
+ ● Masse volumique : quantité de matière dans un volume donné
+ (ex : le bois est moins dense que le métal).
+ ● Résistance : capacité à résister à une force (ex : l'acier est plus
+ résistant que le plastique).
+ ● Dureté : capacité à résister à la rayure (ex : le diamant est le
+ matériau naturel le plus dur).
+ ● Conductivité : capacité à laisser passer l'électricité ou la chaleur
+ (ex : le cuivre est un bon conducteur électrique).
+ ● Flexibilité : capacité à se déformer sans se casser (ex : le
+ caoutchouc est flexible).
+
+Pour choisir le bon matériaux pour une utilisation donnée, il faut :
+ ● Identifier les différents types de matériaux.﻿
+ ● Déterminer les caractéristiques du matériau.
+ ● Comparer les propriétés de différents matériaux.
+
+Le choix du matériau pour un objet technique dépend de ses caractéristiques et
+propriétés. Différentes familles de matériaux existent (métaux, plastiques,
+céramiques, etc.), chacune avec ses propres propriétés (masse volumique,
+résistance, etc.). Le choix optimal s'effectue en comparant les propriétés des
+matériaux avec les besoins spécifiques de l'objet.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1e
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Matériaux et procédés Cycle 4
+
+  Connaissance Les caractéristiques des procédés de mise en forme disponibles dans le laboratoire
+
+Pour fabriquer un objet, on doit mettre en forme des matériaux à l’aide de
+plusieurs procédés. Connaître les techniques de mise en forme est important pour
+choisir la meilleure solution en fonction de nos besoins.
+
+
+Les procédés de mise en forme disponibles dans le laboratoire de Technologie peuvent
+être classés en trois grandes catégories :
+
+ ● Par déformation : le matériau est déformé à chaud ou à
+ froid pour lui donner la forme voulue (pliage, torsion).
+ Par exemple, on utilise une thermoplieuse pour plier à chaud
+ (déformer) une pièce en matière plastique.
+
+ ● Par enlèvement de matière : un objet est créé en
+ enlevant de la matière (perçage, fraisage, découpe laser).
+ Par exemple, on utilise une machine à commande numérique pour
+ graver, percer, découper une pièce dans une pièce brute.
+
+ ● Par ajout de matière : Un objet est créé en ajoutant de la
+ matière (moulage, impression 3D)
+ Par exemple, on utilise une imprimante 3D pour créer une pièce à partir
+ d’une bobine de fil de matériau plastique.
+
+Chaque procédé de mise en forme a ses propres avantages et inconvénients. Il faut tenir
+compte de plusieurs critères pour définir le procédé le plus adapté à notre besoin, tels que :
+
+ - La nature du matériau - La forme souhaitée - Le coût
+ - La précision souhaitée - la rapidité de réalisation
+
+Les procédés de mise en forme des matériaux permettent de fabriquer des objets
+techniques.
+Trois grandes catégories de procédés existent: déformation, enlèvement de
+matière et ajout de matière.
+Le choix du procédé dépend de la nature du matériau, de la forme souhaitée, de la
+précision, du coût et de la rapidité de réalisation.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1f
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Matériaux et procédés Cycle 4
+
+ Les étapes du cycle de vie d’un OST : extraction, traitement, fabrication, assemblage,
+ Connaissance
+ utilisation, fin de vie, transport
+
+Lorsqu’on observe un objet ou un système technique (OST), on doit repérer les
+étapes de son cycle de vie et leur impact sur l’environnement afin de faire des
+choix responsables.
+
+Le cycle de vie d’un OST se compose de 5 étapes :
+
+ ● L’extraction des matières premières :
+ on prélève des ressources naturelles
+ comme le pétrole, le bois ou les
+ minerais.
+
+ ● La fabrication et assemblage : on
+ transforme ces matières premières en
+ matériaux utilisables  comme le
+ plastique, le verre ou le métal pour en
+ faire un OST.
+
+ ● Le transport : on transporte l’OST
+ jusqu’aux magasins où il sera vendu.
+
+ ● L’utilisation : on profite de l’OST.
+
+ ● La fin de vie : on n’a plus besoin de l’OST. On le recycle (matériaux de l’OST utilisés pour
+ créer un nouvel objet), on le valorise (OST utilisé pour une autre utilité) ou on le détruit (OST
+ enterré ou brûlé).
+
+Chaque étape du cycle de vie de l’OST a des impacts sur l’environnement : épuisement des
+ressources naturelles, consommation d’énergie, pollution eau air sol...
+
+
+Pour connaître le cycle de vie d’un objet ou système technique OST, il faut :
+ ● Identifier les différentes étapes du cycle de vie.
+ ● Repérer pour chaque étape leur impact environnemental.
+
+
+Le cycle de vie d'un objet technique se compose de 5 étapes : l'extraction des
+matières premières, la fabrication et l’assemblage, le transport, l’utilisation et sa
+fin de vie. Identifier ces 5 étapes et leurs impacts permet de faire des choix plus
+responsables en tant que consommateur et de limiter les effets négatifs sur
+l'environnement.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1g
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Matériaux et procédés Cycle 4
+
+ Connaissance L’incidence environnementale
+
+Lorsqu’on utilise un objet ou un système technique, il est important de se rappeler qu'il
+a un impact sur l'environnement. Cet impact peut être positif ou négatif, et il est
+important de le connaître pour faire des choix responsables.
+L'incidence environnementale d'un objet ou d'un système technique est l'ensemble
+des effets qu'il a sur l'environnement.
+
+Ces effets peuvent être :
+
+ ● Directs : pollution de l'air, de l'eau ou du sol, consommation d'énergie, production de déchets,
+ etc.
+ ● Indirects : extraction des ressources naturelles, transport, construction, etc.
+
+Pour évaluer l'incidence environnementale d'un objet ou d'un système technique, il faut :
+
+ ● Identifier les matériaux qui le composent : certains matériaux sont plus polluants que
+ d'autres.
+ ● Connaître les procédés de fabrication : certains procédés sont plus polluants que d'autres.
+ ● Se renseigner sur l'utilisation de l'objet : l'utilisation d'un objet peut avoir un impact
+ important sur son incidence environnementale.
+ ● Comparer les différentes options : il est important de comparer les différentes options
+ disponibles avant de choisir un objet ou un système technique.
+
+L'impact environnemental d'un objet technique regroupe l'ensemble de ses effets
+sur l'environnement, directs (pollution) ou indirects (extraction des ressources).
+Pour l'évaluer, il faut identifier les matériaux, les procédés de fabrication, son
+utilisation et comparer différentes options. Choisir un objet plus respectueux de
+l'environnement permet de limiter son impact négatif.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1h
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Fonctions, solutions, constituants de la chaîne d’information Cycle 4
+
+ Les fonctions des constituants suivants : capteurs (température, présence, distance,
+  Connaissance etc.), microcontrôleur, composants d’une interface entre l’humain et la machine (IHM) :
+ boutons, afficheurs, etc…
+
+Pour utiliser un objet ou système technique, les capteurs, microcontrôleurs et
+composants de l’interface entre l’humain et la machine (chaîne d’information) sont
+importants pour son fonctionnement et l’interaction avec son environnement.
+
+ Capteurs Microcontrôleur Interface humain/machine
+
+Les capteurs servent à acquérir des informations sur l'environnement de l'objet technique.
+Les capteurs transforment une grandeur physique (température, présence, etc.) en un signal
+électrique. Ce signal est ensuite transmis au microcontrôleur pour traitement.
+Types de capteurs:
+
+ ● Capteurs de température: Mesurent la température d'un milieu.
+ ● Capteurs de présence: Détectent la présence d'un objet ou d'une
+ personne.
+ ● Capteurs de distance: Mesurent la distance entre l'objet et un
+ obstacle.
+ ● Autres types de capteurs: Lumière, son, pression, etc.
+
+Le microcontrôleur sert à traiter les informations et commander les
+actionneurs.
+Le microcontrôleur est un circuit électronique programmable qui reçoit les
+signaux des capteurs, les traite en fonction de sa programmation et envoie des
+signaux de commande aux actionneurs.
+
+Les composants d'une IHM (Interface Homme-Machine) permettent à l'utilisateur d'interagir
+avec l'objet technique. Les composants IHM permettent à l'utilisateur d'envoyer des informations au
+microcontrôleur (par exemple en appuyant sur un bouton) ou de recevoir des informations du
+microcontrôleur (par exemple en lisant un message sur un afficheur).
+Types de composants IHM:
+
+ ● Boutons: Permettent de saisir des informations ou de commander des actions.
+ ● Afficheurs: Permettent de visualiser des informations.
+ ● Écrans tactiles: Permettent de saisir des informations et de visualiser des informations
+ de manière interactive.
+ ● Autres types de composants IHM: Haut-parleurs, LEDs, etc.
+
+Les capteurs, le microcontrôleur et les composants IHM travaillent ensemble pour
+permettre à l'objet technique de fonctionner. Les capteurs acquièrent des
+informations, le microcontrôleur les traite et les composants IHM les affichent ou
+les transmettent à l'utilisateur. L'utilisateur peut ensuite interagir avec l'objet
+technique via les composants IHM, ce qui entraîne de nouvelles acquisitions de
+données par les capteurs et un nouveau traitement par le microcontrôleur.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1i
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Structuration et traitement des données Cycle 4
+
+ Vocabulaire des données (numériques) : objet / descripteur / collection (liste) / type
+  Connaissance
+ (mot/chaîne de caractères, nombre et booléen) / données structurées
+
+Lorsqu’on utilise un ordinateur ou un smartphone, on manipule des données
+numériques. Mais savez-vous comment elles sont organisées ? Pour mieux les
+comprendre, il est important de connaître quelques termes clés : objet,
+descripteur, collection, type et données structurées.
+
+
+ ● Objet: Un objet numérique est une information que l'on peut stocker et traiter. Il peut
+ s'agir d'une photo, d'un morceau de musique, d'un texte, d'une personne dans un carnet
+ d'adresses, etc.
+
+ ● Descripteur: Un descripteur est une caractéristique qui permet de décrire un objet.
+ Par exemple, pour une photo, les descripteurs pourraient être la date de prise de vue, le lieu,
+ le nom du photographe, etc.
+
+ ● Collection: Une collection est un
+ ensemble d'objets qui partagent les
+ mêmes descripteurs. Par exemple, tu
+ peux avoir une collection de photos de
+ vacances, une collection de musiques
+ que tu aimes, etc.
+
+ ● Type: Le type d'une donnée précise sa
+ nature. Il existe trois types principaux :
+
+ ● Texte (ou chaîne de caractères): une suite de lettres, chiffres et symboles (ex: "nom",
+ "prénom").
+ ● Nombre: une valeur numérique (ex: 12, 3.14).
+ ● Booléen: une valeur Vrai ou Faux (ex: "homme"/"femme", "activé"/"désactivé").
+
+ ● Données structurées: Les données structurées sont organisées de manière précise,
+ souvent sous forme de tableau. Chaque objet de la collection occupe une ligne et chaque
+ descripteur une colonne.
+
+Pour structurer et traiter les données, il faut savoir:
+ ● Identifier les objets, descripteurs, collections et types de données dans des exemples concrets.
+ ● Organiser des données numériques sous forme de tableau.
+ ● Choisir les descripteurs pertinents pour décrire un objet.
+
+
+Les données numériques sont organisées en objets (informations stockées),
+décrits par des descripteurs (caractéristiques). Ces objets peuvent être
+regroupés en collections (partageant des descripteurs) et possèdent un type
+(texte, nombre, booléen). Les données structurées, organisées en tableaux,
+facilitent leur traitement.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1j
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Structuration et traitement des données Cycle 4
+
+ Représentation des données : le bit : élément minimum d’information, représentation
+ Connaissance
+ par les symboles 0 et 1
+
+Lorsqu’on utilise un téléphone portable, un ordinateur ou même lorsque l’on regarde la télévision,
+toutes ces technologies fonctionnent grâce à des combinaisons de bits.
+
+Le bit est l'élément fondamental de l'information numérique.
+
+Il ne peut prendre que deux valeurs :
+ ● Le symbole 0 représente l'absence de quelque chose,
+ souvent interprété comme "faux" ou "éteint".
+
+ ● Le symbole 1 représente la présence de quelque chose,
+ souvent interprété comme "vrai" ou "allumé".
+
+Cette interprétation binaire forme la base de tout calcul et traitement de données en informatique.
+
+Les ordinateurs manipulent toutes les informations sous forme de bits :
+
+ ● Stockage de données : Les ordinateurs et les appareils numériques stockent toutes les informations
+ sous forme de bits.
+
+ ● Codage d'informations : Les bits sont utilisés pour coder des nombres, des caractères, des images,
+ des sons et d'autres types de données.
+
+ ● Transmission de données : Les bits sont utilisés pour transmettre des informations d'un appareil à un
+ autre.
+
+Les processeurs, mémoires et périphériques de stockage traitent les données en les convertissant en
+combinaisons de bits. Par exemple, un octet (groupe de 8 bits) peut représenter des valeurs numériques
+comprises entre 0 et 255, des caractères textuels, des instructions de programme, etc.
+
+La connaissance du bit permet :
+
+Comprendre la numérisation : Savoir que toute donnée
+(texte, image, son) peut être transformée en une suite de 0
+et de 1. Par exemple, un mot peut se numériser en 16 bits.
+
+Interpréter la taille des données : Comprendre que la
+quantité d'informations dépend du nombre de bits utilisés.
+Par exemple, une image haute résolution nécessite plus
+de bits qu'une image de faible résolution.
+
+Apprécier l'importance du bit : Réaliser que chaque bit
+compte dans la manière dont les informations sont
+stockées, traitées et transmises.
+
+Le bit est l'élément minimum d’information utilisé pour représenter et manipuler toutes
+les données numériques dans le domaine de l'informatique.
+Le bit est symbolisé par des 0 et 1.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1k
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Structuration et traitement des données Cycle 4
+
+ Représentation des données : représentation des booléens, des mots (code ASCII
+ Connaissance
+ étendu), des nombres entiers naturels
+
+Lorsque l’on utilise un ordinateur ou tout système numérique, on échange avec
+lui des informations sous différentes formes : textes, images, sons, etc. Pour
+comprendre et traiter ces informations, il les convertit en un langage qu'il
+comprend : le langage binaire.
+
+Le langage binaire est composé de deux chiffres nommés bits (Binary Digit) : 0 et 1, et permet de
+coder toutes les informations numériques.
+
+
+Booléens : Les booléens sont des valeurs qui ne peuvent
+être que vraies ou fausses. Ils sont représentés par un seul
+bit (0 ou 1). Par exemple, une variable booléenne peut
+indiquer si une lumière est éteinte (0) ou allumée (1).
+
+Mots (code ASCII étendu) : Un mot est une suite de caractères qui représente une information.
+Les caractères sont codés à l'aide d'un système appelé ASCII étendu. Ce système attribue un
+nombre à chaque caractère, par exemple :
+
+ ■ La lettre "A" est codée par le nombre 65.
+ ■ Le chiffre "1" est codé par le nombre 49.
+ ■ Le symbole "@" est codé par le nombre 64.
+
+
+Nombres entiers naturels : Les nombres entiers naturels sont des nombres entiers
+positifs ou nuls. Ils sont représentés par une série de 0 et de 1 dont le nombre
+de bits dépend de la valeur du nombre entier naturel.
+Par exemple, le nombre 10 peut être représenté par 4 bits (1010 en binaire).
+
+
+Pour comprendre le fonctionnement d’un ordinateur, il faut savoir :
+ ● Convertir un booléen en binaire : 0 = faux, 1 = vrai.
+ ● Convertir un caractère en code ASCII étendu : utiliser un tableau de conversion.
+ ● Convertir des nombres entiers naturels en binaire et inversement : 10 ⇔ 1010.
+ ● Comprendre comment les informations sont stockées et transmises par l'ordinateur.
+
+
+Pour représenter et traiter des données, les ordinateurs utilisent le langage binaire
+(0 et 1). Les booléens (vrai/faux), les caractères (codés en ASCII étendu) et
+nombres entiers naturels sont convertis en binaire pour être stockés et traités.
+
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1l
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Structuration et traitement des données Cycle 4
+
+ Traitement des données : mise en forme et traitement de données (calculs, filtre, tri)
+  Connaissance
+ dans un logiciel (tableur)
+
+Pour organiser ou traiter des informations, il est possible d’utiliser un logiciel type
+tableur. Ce logiciel va permettre de mieux comprendre et d'organiser les données
+en tableau.
+
+Un tableur est un logiciel qui permet
+d’organiser les données en lignes et en
+colonnes.
+Chaque cellule contient une information
+(texte, nombre, date...).
+
+On peut mettre en forme les données
+(couleur, police, etc.) pour les rendre plus
+lisibles.
+
+Mise en forme et traitement des données dans un tableur :
+
+ 1. Saisir des données dans un tableur.
+ 2. Mettre en forme les données (couleur, police, etc.).
+ 3. Effectuer des calculs simples (addition, soustraction, moyenne, etc.).
+ 4. Filtrer les données pour afficher uniquement les informations qui t'intéressent.
+ 5. Trier les données par ordre croissant ou décroissant.
+
+Un tableur est un logiciel qui permet d'organiser et de traiter des
+données en les présentant sous forme de tableau. Chaque cellule du
+tableur contient une information (texte, nombre, date...). Il permet de
+mettre en forme les données, d'effectuer des calculs simples, de filtrer et
+de trier les informations pour une meilleure analyse et compréhension.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1m
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La circulation de l’information dans un réseau informatique Cycle 4
+
+  Connaissance Un réseau local, le réseau mondial (Internet)
+
+Lorsqu’on se connecte au collège et qu’on surfe sur Internet, on utilise le réseau
+informatique.
+
+Il existe deux types de réseaux informatiques :
+
+ ● Réseau local (LAN) : C’est l'ensemble ● Réseau mondial (Internet) : C’est un
+ de composants connectés entre eux, immense réseau à travers le monde qui
+ dans un même lieu comme le collège ou relie des milliards de réseaux locaux.
+ la maison.
+ Pour y accéder, il faut être présent dans
+ ce lieu et avec un code d’accès.
+
+Quelques exemples de ce que l’on peut faire avec un réseau informatique :
+
+ ● Communiquer : envoyer des emails, chatter avec des amis, passer des appels vidéo …
+ ● Partager des informations : télécharger des fichiers, regarder des vidéos en streaming,
+ écouter de la musique …
+ ● Apprendre : faire des recherches sur internet, suivre des cours en ligne …
+ ● Se divertir : jouer à des jeux en ligne, regarder des films et des séries …
+
+
+Un réseau informatique local est constitué de composants connectés entre eux
+dans un même lieu, comme le collège ou la maison.
+Le réseau mondial (Internet) est un immense réseau qui relie des milliards de
+réseaux locaux.
+Les réseaux informatiques permettent d’accéder à des informations, communiquer,
+partager …
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1n
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La circulation de l’information dans un réseau informatique Cycle 4
+
+ Le rôle d’un terminal, d’une carte réseau, des liaisons (filaires ou non filaires), d’un
+  Connaissance
+ commutateur, d’un routeur, d’un serveur
+
+Lorsqu’on se connecte au collège, on utilise un réseau informatique. Ce réseau est
+constitué de plusieurs composants interconnectés entre eux.
+
+On peut représenter le réseau informatique du collège avec un schéma simplifié comme celui-ci :
+
+Pour comprendre le fonctionnement d’un réseau, il faut savoir :
+
+ 1. Nommer ses différents composants,
+ 2. Expliquer leur rôle,
+ 3. Expliquer comment circulent les données dans le réseau.
+
+Un réseau informatique est constitué de différents composants : terminaux, cartes
+réseaux, commutateurs, serveurs, modem routeur. Il sont interconnectés avec le
+commutateur (Switch) pour partager des informations (fichiers) et des
+périphériques (imprimantes, …)
+Ils sont reliés entre eux par des câbles (liaisons filaires) ou par des ondes Wi-Fi
+(liaisons non filaires).
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1o
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La circulation de l’information dans un réseau informatique Cycle 4
+
+ Connaissance Le rôle et la structure d’une adresse IP, des tables de routage
+
+Lorsque deux ordinateurs communiquent sur internet, c’est rendu possible car
+chacun a une adresse internet.
+
+Pour envoyer et recevoir des informations, chaque appareil a besoin d'une adresse unique :
+c'est l'adresse IP.
+
+Une adresse IP est le Numéro d'identification unique attribué à chaque
+appareil connecté à un réseau utilisant le protocole Internet (IP). Ce numéro
+est composé de quatre séries de chiffres compris entre 0 et 255, séparés
+par des points (IPv4).
+● Une adresse IP privée est attribuée à un appareil au sein d'un réseau local
+ (LAN). Elle permet aux appareils de communiquer entre eux et d'accéder aux
+ ressources du réseau, comme les imprimantes et les serveurs de fichiers.
+
+● Une adresse IP publique est attribuée à un modem routeur (Box) par un fournisseur d'accès Internet
+ (FAI). Elle permet aux appareils connectés au réseau local d'accéder à Internet et de communiquer avec
+ d'autres appareils sur le Web.
+
+Une table de routage est une structure de données utilisée par les
+routeurs pour déterminer le chemin à emprunter pour acheminer les
+paquets de données vers leur destination finale. Elle est comparable à
+un plan de ville pour un réseau informatique, indiquant les routes à prendre pour
+atteindre chaque destination.
+
+
+Avec un ordinateur, on peut :
+ ● Connaître l’adresse IP avec la commande IPconfig.
+ ● Localiser approximativement un appareil.
+ ● Gérer la sécurité du réseau (filtrage des adresses IP
+ indésirables, pare-feu).
+
+L'adresse IP est l’identifiant unique d’un ordinateur qui lui permet de communiquer
+dans les réseaux informatiques. L’adresse IP publique d’un ordinateur lui permet de
+communiquer sur Internet. C’est le Fournisseur d’Accès Internet qui l’attribue à son
+client. L’adresse IP privée d’un ordinateur permet de l’identifier dans un réseau
+local.
+Les tables de routage permettent d'acheminer les données à travers le réseau
+jusqu’à l’adresse IP de destination.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1p
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La circulation de l’information dans un réseau informatique Cycle 4
+
+ Connaissance Le débit et les ordres de grandeur associés
+
+Les informations circulent plus ou moins vite dans les réseaux informatiques.
+Cette vitesse de circulation s’effectue en fonction du débit.
+
+Le débit, en informatique, représente la quantité de données numériques transmise par une
+interface ou un support de communication sur une période de temps donnée.
+
+Il s'exprime généralement en bits par seconde (bps), kilobits par seconde
+(kbps), mégabits par seconde (Mbps), gigabits par seconde (Gbps) ou térabits
+par seconde (Tbps).
+
+ Kilobits par seconde Mégabits par seconde Gigabits par seconde Térabits par seconde
+ (Kb/s) (Mb/s) (Gb/s) (Tb/s)
+
+ 1 000 bits par seconde 1 000 kilobits par seconde 1 000 mégabits par seconde 1 000 gigabits par seconde
+
+Un bit, abréviation de "binary digit", est l'unité d'information la plus élémentaire dans
+l'informatique. Il représente la plus petite quantité d'information pouvant être stockée ou transmise.
+Un bit ne peut prendre que deux valeurs : 0 ou 1.
+
+Ordres de grandeur du débit:
+
+ ● Bas débit (inférieur à 1 Mbps): Suffisant pour la navigation web basique, la consultation de courriels
+ et l'utilisation de messageries instantanées.
+ ● Débit moyen (entre 1 et 10 Mbps): Permet de streamer de la musique, de regarder des vidéos en
+ définition standard et de jouer à des jeux en ligne de base.
+ ● Haut débit (entre 10 et 100 Mbps): Adapté au streaming vidéo en haute définition, aux jeux en ligne
+ et aux téléchargements volumineux.
+ ● Très haut débit (supérieur à 100 Mbps): Nécessaire pour le streaming vidéo en 4K, les jeux en ligne
+ gourmands et le transfert de fichiers volumineux.
+
+Facteurs influençant le débit:
+
+ ● La technologie de connexion: ADSL, fibre optique, câble, Wi-Fi, etc.
+ ● L'infrastructure du fournisseur d'accès à internet (FAI): Capacité du réseau, nombre d'abonnés,
+ etc.
+ ● La présence de congestion sur le réseau: Heures de pointe, utilisation simultanée de plusieurs
+ appareils, etc.
+ ● La distance entre l'appareil et le routeur ou le point d'accès Wi-Fi: Plus la distance est grande,
+ plus le débit peut être faible.
+ ● Les interférences électromagnétiques: Présence d'appareils électroniques, murs épais, etc.
+
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1q
+
+
+=== NOUVELLE FICHE ===
+
+Les solutions de transmission de l’information sont choisies en fonction du débit nécessaire :
+
+ ● Fibre optique : Une fibre optique est un fil en verre ou plastique de l'épaisseur d'un
+ cheveu, dans lequel peuvent circuler des signaux lumineux émis par un laser. Avec
+ des débits très élevés, pouvant atteindre plusieurs térabits par seconde (Tbps), elle
+ est utilisée pour les longues distances et les réseaux à haut débit.
+ ● Wi-Fi 5 (802.11ac) : Transmission par ondes avec des débits de l'ordre de plusieurs
+ centaines de mégabits par seconde (Mbps) à plusieurs gigabits par seconde
+ (Gbps). Le standard Wi-Fi est le plus répandu actuellement.
+ ● 4G LTE: Transmission par ondes avec des débits de l'ordre de plusieurs dizaines de
+ mégabits par seconde (Mbps) à un gigabit par seconde (Gbps). Technologie mobile
+ cellulaire de quatrième génération.
+ ● 5G: Transmission par ondes avec des débits potentiels de plusieurs gigabits par
+ seconde (Gbps) et pouvant atteindre des dizaines de gigabits par seconde (Gbps)
+ en théorie. Nouvelle génération de technologie mobile cellulaire.
+ ● Bluetooth: Transmission par ondes avec des débits de l'ordre de plusieurs mégabits
+ par seconde (Mbps). Utilisé pour les connexions à courte portée entre appareils
+ mobiles.
+
+Mesurer le débit
+
+Plusieurs outils permettent de mesurer le débit de sa
+connexion internet, tels que les sites web dédiés ou les
+applications intégrées aux systèmes d'exploitation.
+
+La vitesse de circulation des informations dans les réseaux informatiques dépend
+du débit, mesuré en bits par seconde (bps). Plus le débit est élevé, plus les données
+circulent rapidement.
+Le débit varie en fonction de plusieurs facteurs, tels que la technologie de
+connexion, l'infrastructure du fournisseur d'accès à internet (FAI), la congestion
+du réseau et la distance entre l'appareil et le routeur.
+Les solutions de transmission de l'information sont choisies en fonction du débit
+nécessaire: fibre optique pour les très hauts débits, Wi-Fi 5, 4G LTE et 5G pour des
+débits plus modérés, et Bluetooth pour les connexions à courte portée.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC1q
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Le dépannage et la réparation Cycle 4
+
+ Connaissance La fiabilité, la durabilité, l’indice de réparabilité
+
+Pour choisir un objet ou système technique qui durera dans le temps, on
+s’intéresse à sa fiabilité, sa durabilité et son indice de réparabilité.
+
+
+La fiabilité d'un objet technique est sa capacité à fonctionner correctement sans
+défaillance sur une période donnée dans des conditions d'utilisation normales. Plus
+la fiabilité est élevée, moins l'objet est susceptible de tomber en panne.
+
+La durabilité d'un objet technique est sa capacité à durer dans le temps et à
+résister à l'usure. Une excellente durabilité permet de réduire le
+nombre de remplacements d'objets techniques, et donc son
+impact environnemental.
+
+L’indice de réparabilité est une note attribuée à un objet
+technique en France qui indique sa facilité de réparation. Il est
+noté sur une échelle de 1 à 10, 10 étant le plus facile à réparer..
+Plus l'indice est élevé, plus la réparation est facile et accessible.
+
+La fiabilité et la durabilité sont souvent liées. Un objet fiable est généralement plus durable, car il
+est moins susceptible de tomber en panne. L'indice de réparabilité peut être un indicateur de la
+fiabilité et de la durabilité. Un objet avec un indice de réparabilité élevé est généralement plus
+facile à réparer, ce qui signifie qu'il est moins susceptible d'être jeté en cas de panne.
+
+
+Comment choisir des objets fiables, durables et réparables ?
+
+ ● Se renseigner sur la fiabilité et la durabilité des produits avant de les acheter.
+ Lire les avis des consommateurs et comparer les caractéristiques des différents
+ produits peut aider à faire un choix éclairé.
+ ● Privilégier les produits avec un indice de réparabilité élevé. L'indice de
+ réparabilité est une information précieuse qui peut aider à choisir des produits
+ plus durables et réparables.
+ ● Entretenir régulièrement les objets techniques. Un entretien régulier peut
+ prolonger la durée de vie des objets techniques et réduire le risque de panne.
+ ● Réparer les objets techniques plutôt que de les jeter. En réparant les objets
+ techniques plutôt que de les jeter, il est possible de réduire les déchets et de
+ préserver l'environnement.
+
+La fiabilité, la durabilité et l'indice de réparabilité sont des facteurs importants à
+prendre en compte lors du choix d'objets techniques. En choisissant des produits
+fiables, durables et réparables, il est possible de réduire les coûts, diminuer l'impact
+environnemental et améliorer la satisfaction des consommateurs.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/1 SFC2a
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Le dépannage et la réparation Cycle 4
+
+ Les règles usuelles de sécurité et de mise en œuvre des moyens de réalisation au sein
+  Connaissance
+ d’un atelier de fabrication collaboratif
+
+Assurer la sécurité dans un atelier de fabrication collaboratif est essentiel,
+d'autant plus lorsqu'il y a plusieurs personnes qui travaillent ensemble.
+
+Voici quelques règles de sécurité à respecter dans un atelier de fabrication collaboratif:
+
+ ● Porter des équipements de protection individuelle (EPI):
+ Porter les EPI adéquats selon le type de travail effectué. Cela peut inclure des
+ lunettes de protection, des gants, des chaussures de sécurité, un masque
+ anti-poussière, etc.. S’attacher les cheveux.
+
+ ● Se familiariser avec les machines et les outils:
+ Avant de commencer à travailler, il faut se familiariser avec les machines et
+ les outils à utiliser. Lire les manuels d'utilisation et respecter scrupuleusement
+ les instructions de sécurité.
+
+ ● Maintenir de l’ordre et de la propreté:
+ Maintenir l'atelier propre et ordonné pour prévenir les accidents. Ranger les outils et les matériaux
+ après utilisation, et nettoyer régulièrement les surfaces de travail.
+
+ ● Etre vigilant et attentif à l'environnement:
+ Être conscient de son environnement et des autres personnes qui
+ travaillent à proximité. Éviter tout comportement susceptible de mettre en
+ danger soi-même ou les autres.
+
+ ● Signaler les dangers possibles: Si un danger est détecté, le signaler
+ immédiatement à un responsable.
+
+ ● Respecter les procédures: Suivre scrupuleusement les procédures de
+ sécurité établies pour chaque type de travail.
+
+ ● Se former: Participer aux formations de sécurité dispensées dans l'atelier.
+
+
+En plus de ces règles générales, il est indispensable de respecter les consignes de sécurité
+spécifiques à chaque machine ou outil. Ces consignes sont généralement affichées sur la
+machine ou l'outil, et dans le manuel d'utilisation.
+
+
+Pour garantir la sécurité de tous lors de la mise en œuvre de moyens de réalisation
+au sein d’un atelier de fabrication collaboratif, il est nécessaire de mettre en place
+des règles et des procédures claires, et de les respecter.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC2b
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Le dépannage et la réparation Cycle 4
+
+ La technologie et les caractéristiques des composants à remplacer : capteurs,
+  Connaissance
+ actionneurs, composants, microcontrôleurs, générateurs
+
+Pour réparer un objet technique, il est important de connaître la technologie et les
+caractéristiques des composants à remplacer.
+
+Un objet technique est composé de différents éléments qui ont chacun des caractéristiques
+propres. Lors de l’achat, il faut faire attention aux caractéristiques du composant à remplacer.
+
+Types Composants Exemples de caractéristiques
+
+
+Capteurs Exemple du micro rupteur
+
+Capteurs de ● Force d'actionnement.
+température, son, ● Course du levier: distance avant de
+luminosité, … déclencher
+ ● Type de contact: normalement ouverts (NO)
+Micro rupteur à levier
+ ou normalement fermés (NF).
+Micro rupteur à galet
+ ● Le nombre de cycles d'ouverture et de
+ fermeture.
+ ● La taille physique du micro rupteur.
+ ● Mode de fixation
+
+
+Actionneurs
+
+Moteurs
+Ampoules
+
+Microcontrôleurs
+
+Micro :bit V1
+
+Micro :bit V2
+
+Arduino
+
+Générateurs
+
+Piles
+Batteries
+
+Pour réparer un objet technique, il faut connaître la technologie et les
+caractéristiques du composant à remplacer. Pour choisir le bon composant de
+remplacement, il faut lire les fiches techniques et rechercher les capacités
+attendues.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC2c
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Le dépannage et la réparation Cycle 4
+
+ Les procédés d’obtention de pièce (ajout et enlèvement de matière), de mise en forme (pliage,
+  Connaissance
+ thermoformage) et d’assemblage (fixe et démontable)
+
+
+Lorsqu’on veut fabriquer ou améliorer un objet composé d’une ou plusieurs
+pièces, il est nécessaire de connaître les procédés techniques les mieux adaptés
+pour obtenir ces pièces, les mettre en forme et les assembler entre elles.
+● Les procédés d’obtention de pièces utilisés au collège
+
+ Obtention par enlèvement de matière Obtention par ajout de matière
+
+ Par usinage ( fraiseuse Par découpe laser Par impression 3D Par moulage
+ automatisée )
+
+● Les procédés de mise en forme utilisés au collège
+
+ Mise en forme par thermopliage Mise en forme par thermoformage
+
+● Les procédés d’assemblage utilisés au collège
+
+ Assemblages fixes Assemblages démontables
+
+ Par collage Par soudage Par rivetage Par vissage Par boulonnage
+
+Pour fabriquer ou améliorer un objet ou système technique au collège, il existe trois
+procédés techniques :
+ ● les procédés d'obtention d’une pièce par enlèvement ou ajout de matière ;
+ ● les procédés de mise en forme par thermopliage ou thermoformage ;
+ ● les procédés d'assemblage fixe ou démontable.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC2d
+
+
+=== NOUVELLE FICHE ===
+
+ CRÉATION, CONCEPTION, RÉALISATION, INNOVATIONS : des objets
+ à concevoir et à réaliser
+
+ La modélisation et la fabrication Cycle 4
+
+ SFC2e-les moyens de production : découpe au laser, centre d’usinage, fabrication additive
+  Connaissance
+ (imprimante 3D)
+
+
+Si on souhaite fabriquer des pièces d’un Objet ou d’un Système Technique, différents moyens de
+production sont à votre disposition dans le FABLAB du laboratoire de technologie. Il est important
+de connaître ces différentes machines pour choisir la plus adaptée à la fabrication de chaque
+pièce. Il existe 2 grands types de moyens de fabrication :
+
+● Les moyens de production par enlèvement de matière
+ Centre d’usinage ( fraiseuse automatisée )
+ Principe de fabrication : La machine-outil à commande numérique ou fraiseuse automatisée est
+ contrôlée par un ordinateur. L’usinage consiste en un enlèvement de matière dans une pièce brute à
+ l’aide d’un outil appelé fraise.
+
+ Machine-outil à CN Outil de coupe : Fraise Exemple de pièce réalisée
+
+ Découpe laser
+ Principe de fabrication : Un laser utilise un faisceau de lumière concentré pour chauffer et découper le
+ matériau. C'est une technique précise, rapide et flexible qui peut être utilisée pour de nombreux
+ matériaux (acier, aluminium, bois, plastique, etc.).
+
+ Machine à découpe laser Outil de coupe : faisceau laser Exemple de pièces réalisées
+
+● Le moyen de production par addition de matière
+ Impression 3D Une tête d’impression pilotée par un ordinateur comprenant une ou plusieurs buses se
+ déplace au-dessus d’un plateau. Les buses entraînent un filament qui est fondu et déposé sur le plateau.
+
+ Imprimante 3D Filament Tête d’impression Buse d’impression Exemple
+
+Pour choisir le moyen de production du FABLAB le mieux adapté en fonction des
+caractéristiques de la pièce à obtenir (forme, matériau, taille,..), il est important de connaître
+chaque machine, ses capacités et de savoir les utiliser correctement et en toute sécurité.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC2e
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Le dépannage et la réparation Cycle 4
+
+ Les moyens de prototypage électronique : plaque d’essai, fils, composants
+  Connaissance
+ électroniques, générateurs
+
+Lorsqu’on souhaite créer son propre circuit électronique pour réparer un objet
+technique, modifier un circuit existant ou pour ajouter une nouvelle
+fonctionnalité, il est important de le tester avant de créer le circuit imprimé final :
+c’est le rôle du prototypage.
+
+Le prototypage est une technique qui permet de créer
+une version fonctionnelle d'un circuit électronique en
+utilisant des composants électroniques et des outils
+simples, sans avoir à souder les composants.
+
+Il permet de :
+
+ ● Tester le fonctionnement du circuit : est-ce qu'il
+ s'allume ? Est-ce qu'il produit la bonne lumière ?
+ ● Identifier les dysfonctionnements : identifier les
+ erreurs et les corriger facilement.
+ ● Modifier et améliorer le circuit : tester différentes
+ configurations de composants et de valeurs pour
+ optimiser le fonctionnement du circuit.
+
+Pour cela on a besoin d’outils de prototypage :
+
+ ● La plaque d'essai (ou breadboard) : C'est une plaque
+ avec des trous qui permettent de relier facilement les
+ composants entre eux à l'aide de fils.
+ ● Les fils: Ils permettent de créer les connexions
+ électriques entre les différents composants.
+ ● Les composants électroniques: Ce sont les éléments
+ qui font fonctionner le circuit, comme les résistances, les
+ transistors, les LEDs, etc.
+ ● Les générateurs: Ils fournissent l'énergie nécessaire au
+ circuit, comme une pile ou une alimentation électrique.
+
+Le prototypage est une étape essentielle dans la conception, la réparation ou la
+modification d'un circuit électronique. Il permet de tester le fonctionnement d'un
+circuit avant de le fabriquer, d’identifier, de corriger les erreurs de conception, afin
+de modifier et d’améliorer le circuit pour optimiser ses performances. Pour cela on a
+besoin d’outils de prototypage : plaque d’essais, composants, fils électriques et
+générateur.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC2f
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Le dépannage et la réparation Cycle 4
+
+  Connaissance Les modes de sollicitation des matériaux (flexion, torsion)
+
+Pour dépanner ou réparer des objets techniques, il est important de comprendre
+comment les efforts qui agissent sur eux. Lorsque des pièces se déforment ou
+cassent, c’est souvent à cause des sollicitations importantes des matériaux, tels
+que la flexion et la torsion.
+
+La flexion est un mode de sollicitation qui tend à
+courber un matériau.
+ ● Exemple : lorsqu’on appuie sur une plaque de bois
+ entre 2 appuis, elle se déforme. C’est le cas des
+ meubles.
+ ● Conséquence : La flexion peut entraîner une
+ déformation du matériau, voire sa rupture.
+
+La torsion est un mode de sollicitation qui tend à
+tordre un matériau.
+ ● Exemple : lorsqu’on tord une serviette mouillée pour
+ l'essorage.
+ ● Conséquence : La torsion peut entraîner une rotation
+ du matériau, voire sa rupture.
+
+Lors de la conception ou d’une réparation, il faut donc :
+
+ ● Choisir le bon matériau pour chaque utilisation en fonction de ses propriétés (résistance,
+ flexibilité, etc.).
+ ● Prévenir les dysfonctionnements et les pannes en anticipant les points de faiblesse des
+ objets.
+ ● Réparer les objets en connaissant les techniques adaptées pour chaque type de sollicitation.
+
+
+Les matériaux peuvent être soumis à différentes forces qui les déforment, les
+deux types les plus courants sont la flexion et la torsion. La résistance d'un
+matériau à une force dépend de sa forme, de sa composition et de sa structure
+interne. Il est important de connaître les modes de sollicitation pour choisir le
+matériau adapté à chaque usage et pour le réparer si nécessaire.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC2g
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ Le dépannage et la réparation Cycle 4
+
+ Les conductibilités électrique et thermique, la disponibilité, la valorisation, le recyclage
+  Connaissance
+ des matériaux.
+
+
+Les matériaux des objets techniques ont des propriétés qui influencent leur
+utilisation, dépannage et réparation. La conductibilité électrique et thermique,
+ainsi que la disponibilité, la valorisation et le recyclage des matériaux, sont
+importantes pour assurer la durabilité et la fonctionnalité des objets techniques que
+nous utilisons.
+
+ ● Conductibilités électrique et thermique : Certains
+ matériaux permettent le passage de l'électricité ou de la
+ chaleur plus facilement que d'autres. Par exemple, le cuivre
+ est un bon conducteur électrique, tandis que le plastique est
+ un isolant électrique.
+
+
+ ● Disponibilité des matériaux : Certains matériaux sont
+ plus faciles à obtenir que d'autres. Il est important de choisir
+ des matériaux disponibles localement pour réduire l'empreinte
+ écologique.
+
+ ● Valorisation des matériaux : Après avoir
+ utilisé un objet, il est possible de récupérer
+ certains matériaux pour les réutiliser. Par
+ exemple, le verre peut être recyclé pour fabriquer
+ de nouvelles bouteilles ou des objets en verre.
+
+ ● Recyclage des matériaux : Le recyclage
+ permet de réduire la quantité de déchets et de
+ préserver les ressources naturelles. Par exemple,
+ le papier recyclé peut être utilisé pour fabriquer de
+ nouveaux produits en papier.
+
+
+Les matériaux ont différentes propriétés qui influencent leur utilisation. La connaissance
+de ces propriétés est essentielle pour choisir le matériau adapté et pour l'utiliser de manière
+durable. Il est important de valoriser les matériaux en les réutilisant, en les réparant ou
+en les recyclant. En choisissant les bons matériaux et en adoptant des pratiques de
+recyclage, nous pouvons contribuer à réduire notre empreinte écologique et à prolonger
+la durée de vie des objets que nous utilisons au quotidien.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC2h
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+  Connaissance Algorithmique et programmation : variable
+
+En informatique, une variable est un élément fondamental qui permet de stocker
+et de manipuler des données. Les programmeurs utilisent des variables
+informatiques dans leurs programmes pour permettre aux objets et systèmes
+techniques de fonctionner.
+
+La variable se compose de deux éléments essentiels :
+
+ ● Le nom : Il s'agit d'un identifiant unique qui permet de
+ référencer la variable dans le programme.
+ Le choix du nom doit être clair et explicite pour refléter la nature des
+ données stockées.
+
+ ● La valeur : C'est la donnée concrète stockée dans la
+ variable.
+ La nature de la valeur dépend du type de variable, qui peut être:
+ o Entier: Nombres entiers, positifs, négatifs ou nuls (ex: 1, -10, 0)
+ o Réel: Nombres décimaux (ex: 3.14, -5.2, 2.71828)
+ o Chaîne de caractères: Séquences de caractères (ex: "Bonjour", "123 Main Street",
+ "Python")
+ o Booléen: Valeurs booléennes "vrai" ou "faux" (ex: True, False)
+
+
+L’utilisation des variables :
+ ● Elles peuvent être utilisées pour définir une valeur précise à un
+ actionneur (ex: vitesse d’un moteur)..
+
+
+ ● Elles peuvent prendre la valeur mesurée par un capteur (ex : distance d’un
+ obstacle).
+
+ ● La plupart du temps, elles sont prédéfinies dans le logiciel de
+ programmation.
+
+Une variable peut être utilisée pour définir une valeur précise à un actionneur ou
+contenir une valeur issue d’un capteur. Ces valeurs peuvent évoluer au cours de
+l’exécution du programme (exemple : une distance). Elles sont stockées à l’intérieur de
+la mémoire du système.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3a
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+  Connaissance Algorithmique et programmation : opérateurs arithmétiques et logiques (ET, OU, NON)
+
+Lorsqu’on utilise un ordinateur, un smartphone, un robot ou même une calculatrice,
+on exécute des programmes qui suivent des instructions précises, appelées
+algorithmes.
+Ces algorithmes sont constitués d'opérateurs arithmétiques et logiques qui
+permettent de réaliser des calculs et de prendre des décisions.
+
+Pour comprendre et modifier un programme, il est donc nécessaire de comprendre ces
+opérateurs.
+
+
+ ● Un opérateur arithmétique permet de réaliser des calculs mathématiques et d'obtenir
+ des valeurs numériques.
+
+ Les opérateurs arithmétiques correspondent aux opérations
+ mathématiques courantes :
+
+ ● Addition (+) : additionner deux nombres.
+
+ ● Soustraction (-) : soustraire un nombre à un autre.
+
+ ● Multiplication (x) : multiplier deux nombres.
+
+ ● Division (/) : diviser un nombre par un autre.
+
+ ● Un opérateur logique permet de combiner ou modifier des conditions,
+ produisant ainsi un résultat qui est soit "Vrai" soit "Faux".
+
+ Les opérateurs logiques correspondent aux fonctions binaires :
+
+ ● ET : Permet de tester si deux conditions sont vraies en même temps.
+
+ ● OU : Permet de tester si l’une ou l’autre des conditions est vraie.
+
+ ● NON : Permet d'inverser le résultat d'une condition.
+
+Les programmes informatiques suivent des instructions précises appelées
+algorithmes, composés d'opérateurs arithmétiques (calculs) et logiques
+(décisions).
+Les opérateurs arithmétiques (+, -, x, /) servent aux calculs mathématiques et les
+opérateurs logiques (ET, OU, NON) servent à combiner des conditions (vrai/faux).
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3b
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+  Connaissance Algorithmique et programmation : instruction conditionnelle
+
+Pour adapter le comportement d’un programme en fonction de différentes
+situations, on utilise des instructions conditionnelles pour réaliser des actions.
+
+ ● Les instructions conditionnelles sont des éléments essentiels de la programmation qui
+ permettent de contrôler le flux d'exécution d'un programme en fonction de conditions
+ booléennes (vrai ou faux).
+
+ Elles permettent de prendre des décisions et d'exécuter des actions en fonction de ces
+ décisions.
+
+ ● Pour créer une instruction conditionnelle, il faut:
+ ● Définir la condition : c’est une question à laquelle on
+ peut répondre par "vrai" ou "faux".
+ Exemple : Si le capteur de voiture est activé (la condition est
+ vraie).
+ ● Déterminer les deux actions possibles : Une action
+ sera effectuée si la condition est vraie, et l'autre si la
+ condition est fausse.
+ Exemple : Alors ouvrir le portail (la condition est vraie), sinon
+ fermer le portail (la condition est fausse).
+
+
+Les instructions conditionnelle sont présentent dans les programmes des objets et systèmes
+techniques qui interagissent avec leur environnement grâce à des capteurs : une porte de
+supermarché, un robot de nettoyage,… .
+
+
+Les instructions conditionnelles permettent de contrôler le déroulement d'un
+programme en fonction de conditions (vrai/faux). Elles permettent de prendre des
+décisions et d'exécuter des actions en conséquence. Les instructions
+conditionnelles ont la forme suivante : SI ​la condition est vrai, ALORS l’instruction
+s’exécute, SINON c’est une autre qui s’exécute.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3c
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+  Connaissance Algorithmique et programmation : instructions itératives
+
+Les instructions itératives permettent de répéter une séquence d'instructions
+plusieurs fois de suite, ou jusqu'à ce qu'une condition soit remplie. Cela fait
+gagner du temps et rend le programme plus facile à lire.
+
+
+Les instructions itératives sont des boucles. Il existe deux types de boucles :
+
+ ● La boucle "répéter…fois" : Elle répète une séquence d'instructions un nombre défini de
+ fois.
+
+ Exemple: On veut faire clignoter une lumière 10 fois:
+
+ Avec boucle Sans boucle :
+
+ ● Les boucles "tant que" ou "répéter jusqu’à ce que" : Elles répètent une séquence
+ d'instructions tant qu'une condition est vraie.
+
+ Exemple : Le robot avance tant qu’il ne trouve pas d’obstacle au-delà de 10 cm, sinon il s’arrête.
+
+Les instructions itératives permettent de répéter une séquence d'instructions
+dans un programme.
+Il existe deux types d'instructions itératives : la boucle "répéter … fois" et les
+boucles "tant que" ou "répéter jusqu’à ce que". Il est important de savoir choisir le
+type d'instruction itérative adaptée à la situation et de savoir écrire la condition
+d'arrêt de la boucle.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3d
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+ Algorithmique et programmation : structure de données « listes » afin de stocker des
+  Connaissance
+ données issues du programme pour les parcourir et les traiter
+
+Lorsqu’on veut stocker des informations dans un programme informatique, on
+peut utiliser différentes variables. On peut aussi utiliser des listes qui permettent de
+ranger des données de manière ordonnée.
+
+
+Les listes, également appelées tableaux dynamiques, sont des
+structures de données en informatique qui permettent de stocker et
+de gérer une collection d'éléments de manière ordonnée.
+Elles offrent un moyen flexible et efficace d'organiser et de manipuler
+des données dans un programme.
+
+Caractéristiques des listes:
+
+ ● Structure ordonnée: Les éléments d'une liste sont stockés dans un
+ ordre défini, généralement de la première à la dernière position.
+ ● Accès par index: Chaque élément de la liste est accessible par un
+ index, qui correspond à sa position dans la liste.
+ ● Dynamisme: La taille d'une liste peut évoluer dynamiquement pendant l'exécution du programme, en
+ ajoutant ou supprimant des éléments.
+
+Opérations courantes sur les listes:
+
+ ● Ajouter un élément: Permet d'insérer un nouvel
+ élément à la fin de la liste ou à une position
+ spécifique.
+ ● Supprimer un élément: Permet de retirer un
+ élément de la liste en fonction de sa valeur ou de
+ son index.
+ ● Rechercher un élément: Permet de trouver un
+ élément spécifique dans la liste et de connaître sa
+ position.
+ ● Parcourir la liste: Permet d'itérer sur tous les
+ éléments de la liste successivement.
+ ● Modifier un élément: Permet de modifier la valeur d'un élément de la liste en fonction de son index.
+
+Les listes (tableaux dynamiques) permettent de stocker et de gérer des données de
+manière ordonnée dans un programme informatique. Elles sont caractérisées par une
+structure ordonnée, un accès par index et un dynamisme de leur taille. Les opérations
+courantes sur les listes incluent l'ajout, la suppression, la recherche, le parcours et la
+modification d'éléments.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3e
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+  Connaissance Algorithmique et programmation : séquences (bloc) d’instructions
+
+Lorsqu’on programme un objet ou système technique, on décide des
+instructions qu'il doit accomplir. Ces instructions sont organisées en séquences
+d’instructions, appelées aussi blocs d'instructions.
+
+Une séquence d'instructions, aussi appelée bloc d'instructions, est un ensemble d'instructions
+regroupées et exécutées les unes après les autres dans un ordre défini. Elle représente la
+structure de base pour organiser et contrôler le déroulement d'un programme.
+
+Les types de séquences d'instructions
+
+ ● Séquence simple: Suite d'instructions exécutées
+ les unes après les autres sans condition
+ particulière.
+
+ ● Séquence avec instructions conditionnelles:
+ Permet de modifier le flux d'exécution en fonction
+ de conditions booléennes (ex: instructions
+ « si »-« sinon »).
+
+ ● Séquence avec boucles : Permet de répéter un bloc
+ d'instructions un nombre défini de fois ou jusqu'à ce qu'une
+ condition soit remplie (ex: instruction « répéter x fois »).
+
+Lors de la programmation, les instructions sont organisées en séquences (blocs
+d'instructions) pour contrôler le déroulement du programme. 3 types de
+séquences :
+ ● La séquence simple: instructions exécutées les unes après les autres.
+ ● La séquence conditionnelle: flux d'exécution modifié selon des conditions (ex: "si-sinon").
+ ● La séquence avec boucles: répétition d'un bloc d'instructions un nombre défini de fois ou
+ jusqu'à une condition.
+
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3f
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+  Connaissance Algorithmique et programmation : événement
+
+Lorsqu’on utilise un objet technique, différentes actions peuvent être déclenchées en
+détectant un signal, en appuyant sur des boutons ou en faisant des gestes. Ces
+différentes actions sont provoquées par des événements.
+
+Ces événements permettent aux objets et systèmes techniques
+de réagir à notre environnement et à nos interactions.
+
+Un événement est un phénomène qui se produit et qui peut déclencher
+une action dans un programme. Il existe différents types
+d'événements :
+
+ ● Événements physiques : Ils correspondent à une
+ action que l'utilisateur effectue sur l'objet: comme
+ appuyer sur un bouton ou bouger un objet.
+
+ ● Événements temporels: Ils se déclenchent
+ automatiquement après un certain temps.
+
+ ● Événements logiques: Ils se
+ déclenchent lorsqu'une condition
+ est remplie, comme la détection
+ d'un obstacle par un robot.
+
+Pour déclencher des actions grâce à des événements dans un programme, il faut :
+
+ ● Identifier les différents types d'événements dans un programme.
+ ● Déterminer l'action associée à chaque événement.
+ ● Programmer des événements pour créer des interactions avec l'objet ou le système technique.
+
+
+En programmation, afin que les objets et systèmes techniques s’adaptent et
+réagissent à notre environnement, on utilise des événements. Un événement est
+un phénomène qui se produit et qui peut déclencher une action dans un
+programme.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3g
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+ Algorithmique et programmation : déclenchement d’une séquence d’instructions par
+ Connaissance
+ un événement
+
+Pour rendre un programme réactif à son environnement et aux interactions avec
+l’utilisateur, on met en place des déclenchements de séquences d’instructions
+par des événements.
+
+Un événement est un changement qui survient dans l'environnement d'un objet ou d'un
+système.
+Il peut s'agir :
+
+ ● d'une action humaine (clic sur un bouton)
+ ● d'un phénomène naturel (détection de
+ lumière)
+ ● d'une information reçue (signal
+ d'un capteur)
+
+Une séquence d'instructions est un ensemble d'ordres donnés à un objet ou à un système
+pour qu'il effectue une tâche.
+
+Ici, on demande à un système programmable de jouer une note,
+puis d’allumer ses LED en rouge, puis d’avancer à 50% de sa
+puissance.
+
+
+Le déclenchement d'une séquence d'instructions par un événement est le principe qui permet
+de rendre les objets et les systèmes techniques interactifs.
+
+Les événements (actions, phénomènes, informations) permettent de déclencher
+des séquences d'instructions dans un programme, rendant l'objet ou le système
+interactif. Un événement peut être une action humaine, un phénomène naturel ou
+une information reçue. La séquence d'instructions définit les actions à effectuer
+en réponse à l'événement (ex: jouer une note, allumer une LED, avancer).
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3h
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+ Algorithmique et programmation : entrées ou sorties d’un programme (données issues
+  Connaissance par exemple de capteurs IHM et sorties pouvant être en lien avec un actionneur,
+ fichiers)
+
+Les entrées et sorties (I/O) sont des éléments essentiels en algorithmique et
+programmation qui permettent à un programme d'interagir avec le monde
+extérieur. Elles constituent le pont entre le programme et son environnement, en
+lui fournissant des données et en lui permettant d'agir sur son environnement.
+
+Les entrées d’un programme
+
+Elles peuvent provenir de différentes sources, par exemple :
+
+ ● Données utilisateurs : Saisie par l'utilisateur via un clavier, une souris, un écran tactile
+ ou tout autre périphérique d'entrée.
+
+ ● Données provenant de capteurs : Données issues de capteurs physiques
+ mesurant des grandeurs physiques (température, pression, lumière, etc.).
+
+ ● Fichiers: Lecture de données stockées dans des fichiers texte, CSV, images, etc.
+
+Les sorties d'un programme
+
+Elles peuvent se présenter sous différentes formes :
+
+ ● Affichage à l'écran : Texte, graphiques, images, etc., affichés sur un écran
+ ou un autre périphérique d'affichage.
+
+ ● Actionneurs : Contrôle de dispositifs physiques tels que des moteurs, des lumières, des
+ haut-parleurs, etc.
+
+ ● Fichiers : Écriture de données dans des fichiers texte, CSV, images, etc., pour le
+ stockage ou le traitement ultérieur.
+
+
+Pour pouvoir lire, exploiter et modifier le programme d’un système, il faut:
+
+ ● Identifier les entrées et les sorties de ce système dans le programme.
+ ● Comprendre le lien entre les entrées et les sorties dans le programme.
+ ● Utiliser des instructions d'entrée et de sortie afin de pouvoir modifier un programme.
+
+Les entrées et sorties sont essentielles en algorithmique et programmation car elles
+permettent aux programmes d'interagir avec le monde extérieur, d'échanger des
+données et de réaliser des actions concrètes. Les entrées sont des données
+provenant de l'utilisateur, de capteurs ou de fichiers. Les sorties permettent : des
+affichages à l'écran, des contrôles d'actionneurs ou écritures dans des fichiers.
+
+Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3i
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+ Connaissance Programmation graphique par blocs
+
+Lorsqu’on veut donner des instructions à un robot ou à un jeu vidéo, on peut
+utiliser la programmation graphique par blocs. C'est un moyen simple et visuel de
+créer des programmes, sans avoir à écrire du code.
+
+La programmation par blocs fonctionne avec des blocs de code qui
+s'emboîtent les uns dans les autres. Chaque bloc représente une action ou
+une condition. En assemblant les blocs, on crée un programme qui définit le
+comportement de l'objet ou du système technique.
+
+
+Il existe différents types de blocs :
+
+ ● Blocs d'action
+
+ Définissent les actions que l'objet ou le système
+ doit réaliser (ex: avancer, tourner, afficher un
+ message).
+
+ ● Blocs de condition
+
+ Définissent les conditions qui doivent être
+ remplies pour que les actions soient exécutées (ex:
+ si l'objet est proche d'un obstacle, alors s’arrêter).
+
+ ● Blocs de boucle
+
+ Définissent la répétition d'une série d'actions (ex:
+ répéter 4 fois avancer et tourner).
+
+
+Pour programmer par bloc, il faut savoir
+ ● Identifier les différents types de blocs.
+ ● Assembler les blocs pour créer un programme simple.
+ ● Tester un programme.
+ ● Modifier les paramètres d'un programme et identifier ses effets.
+
+La programmation par blocs est un moyen simple et visuel de créer des
+programmes sans écrire de code. Elle utilise des blocs de code emboîtables qui
+représentent des actions, des conditions ou des boucles. Pour programmer par
+blocs, il faut identifier les types de blocs, les assembler, tester le programme et
+modifier ses paramètres.
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3j
+
+
+=== NOUVELLE FICHE ===
+
+ STRUCTURE, FONCTIONNEMENT, COMPORTEMENT : des objets et
+ systèmes techniques à comprendre
+
+ La programmation d’une nouvelle fonctionnalité Cycle 4
+
+ Lien entre la programmation graphique par bloc et la programmation textuelle
+ Connaissance
+ (fin de 3e)
+
+Lorsque l’on utilise un smartphone ou que l’on joue à des jeux vidéo, on interagit avec des
+programmes informatiques. Ces programmes sont créés à partir de langages de programmation,
+qui permettent de donner des instructions à un ordinateur. Il existe deux types principaux de
+langages de programmation : la programmation par blocs et la programmation textuelle.
+
+ ● Programmation textuelle : elle utilise des lignes de
+ code écrites avec des mots-clés et des symboles
+ spécifiques. C'est comme parler à l'ordinateur dans son
+ propre langage.
+ Exemples : JavaScript, Python, C/C++ …
+
+ ● Programmation par blocs : elle utilise des blocs
+ graphiques colorés et emboîtables, comme des pièces
+ de construction. C'est comme assembler des
+ instructions visuelles pour que l'ordinateur les
+ comprenne. Exemples : Scratch,  Makecode,
+ Vittascience …
+
+Exemple avec la maquette de lampadaire équipée d’une carte
+programmable Micro:Bit.
+
+Algorithme associé : si le lampadaire détecte une lumière faible, alors il s’allume,
+sinon il s'éteint.
+
+ ● Avec la programmation textuelle, on
+ peut créer des programmes plus
+ complexes et puissants, mais il faut
+ apprendre la syntaxe du langage et
+ écrire du code précis (exemple : langage
+ JavaScript).
+
+
+ ● Avec la programmation par blocs, on peut créer des
+ programmes plus simples et intuitifs, plus faciles à apprendre et
+ à utiliser, surtout pour les débutants (exemple : programmation
+ par blocs avec Makecode).
+
+La programmation par blocs est un bon point de départ pour apprendre la
+programmation, car elle permet de comprendre les concepts de base sans se
+soucier de la syntaxe compliquée. Ensuite, il est intéressant de passer à la
+programmation textuelle pour créer des programmes plus avancés, mais il faudra
+apprendre le langage de programmation comme le Python par exemple.
+
+
+ Fiche de connaissances - Technologie Cycle 4 – BO n°9 du 29 février 2024 1/ 1 SFC3k
+
+
+=== NOUVELLE FICHE ===
+`;
+
+const SYSTEM_PROMPT = `Tu es un assistant pédagogique pour des élèves de 5e, 4e et 3e en cours de Technologie (Cycle 4).
+Tu réponds UNIQUEMENT à partir du contenu de la fiche de cours ci-dessous.
+Si la question ne concerne pas cette fiche, réponds exactement : "Je ne peux répondre qu'aux questions sur ta fiche de cours. Reformule ta question en lien avec le cours !"
+N'invente jamais d'information absente de la fiche.
+Réponds en français, de façon claire et adaptée au niveau collège.
+Ne fais jamais les exercices à la place de l'élève : guide-le avec des questions ou des indices.
+Si tu cites un élément du cours, indique le titre de la section correspondante.
+
+Voici le contenu complet de la fiche de cours :
+
+${CONTENU_FICHES}`;
+
+let conversationHistory = [];
+let isLoading = false;
+
+function fillInput(text) {
+  const input = document.getElementById('user-input');
+  input.value = text; input.focus();
+}
+
+function addMessage(role, text, refused=false) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  if (role === 'bot') {
+    div.innerHTML = `<div class="avatar"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="bubble${refused?' refused':''}">${fmt(text)}</div>`;
+  } else {
+    div.innerHTML = `<div class="avatar">👤</div><div class="bubble">${esc(text)}</div>`;
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typing';
+  div.innerHTML = `<div class="avatar"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+    <div class="bubble"><div class="typing-dot"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+function removeTyping() { const el=document.getElementById('typing'); if(el)el.remove(); }
+function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(t){ return esc(t).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>'); }
+
+const input = document.getElementById('user-input');
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; });
+
+async function sendMessage() {
+  if (isLoading) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+  isLoading = true;
+
+  addMessage('user', text);
+  conversationHistory.push({ role:'user', content: text });
+  showTyping();
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: conversationHistory.map(m => ({ role: m.role, content: m.content }))
+      })
+    });
+
+    const data = await resp.json();
+    removeTyping();
+
+    if (!resp.ok) {
+      addMessage('bot', '⚠️ Erreur API : ' + (data.error?.message || resp.status));
+    } else {
+      const reply = data.content[0].text;
+      const refused = reply.includes("ne peux répondre qu'aux questions");
+      addMessage('bot', reply, refused);
+      conversationHistory.push({ role:'assistant', content: reply });
+    }
+  } catch(err) {
+    removeTyping();
+    addMessage('bot', '⚠️ Impossible de joindre l\'API. Vérifie ta connexion.');
+  }
+
+  isLoading = false;
+  document.getElementById('send-btn').disabled = false;
+  input.focus();
+}
+</script>
+</body>
+</html>
